@@ -9,6 +9,7 @@ on:
       - "docs/**"
       - "**/*.md"
       - "server/**"
+      - ".github/workflows/server.yml"
   workflow_dispatch:
 
 permissions:

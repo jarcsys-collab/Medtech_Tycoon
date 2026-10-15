@@ -1,0 +1,34 @@
+{
+  "name": "medtechtycoon-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MedTechTycoon backend (Railway + MongoDB Atlas). Phase 2: health and readiness only.",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "audit:prod": "npm audit --omit=dev --audit-level=moderate"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.1",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/rate-limit": "^11.2.1",
+    "fastify": "^5.12.7",
+    "mongodb": "^7.7.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "mongodb-memory-server": "^11.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  }
+}

@@ -1,0 +1,80 @@
+# Checks the Node backend in server/. Railway deploys from main on its own (GitHub integration with
+# "Wait for CI"), so this workflow only verifies; it holds no Railway or MongoDB credentials.
+name: Backend checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - ".github/workflows/server.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/server.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: server-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: server
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js 24 LTS
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Unit and integration tests (local throwaway mongod)
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Dependency audit (production dependencies)
+        run: npm run audit:prod
+
+      # Starts the built server with an unreachable database and checks liveness, readiness,
+      # that no credential reaches stdout, and that SIGTERM shuts down cleanly.
+      - name: Smoke test built server
+        env:
+          NODE_ENV: production
+          PORT: "3999"
+          MONGODB_URI: mongodb://ci_user:ci-not-a-secret-7f3a@127.0.0.1:1/?directConnection=true
+          MONGODB_DB_NAME: medtechtycoon_dev
+          ALLOWED_ORIGIN: https://jarcsys-collab.github.io
+        run: |
+          set -euo pipefail
+          node dist/index.js > server.log 2>&1 &
+          pid=$!
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3999/healthz >/dev/null && break; sleep 0.5; done
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/healthz)" = "200" ]
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/readyz)" = "503" ]
+          kill -TERM "$pid"
+          wait "$pid" && rc=0 || rc=$?
+          cat server.log
+          [ "$rc" = "0" ] || { echo "::error::Server exited with $rc on SIGTERM"; exit 1; }
+          grep -q '"shutting down"' server.log
+          grep -q '"MongoDB connection closed"' server.log
+          if grep -q 'ci-not-a-secret-7f3a' server.log; then echo "::error::Credential found in logs"; exit 1; fi
