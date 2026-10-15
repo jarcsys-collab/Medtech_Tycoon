@@ -1,0 +1,140 @@
+# Builds the Godot Web export and publishes it to GitHub Pages.
+# The itch.io beta is built and uploaded by hand from the local builds/ folder; this workflow never touches it.
+name: Web export to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "server/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One Pages deployment at a time; a newer push waits instead of cancelling a deploy mid-flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GODOT_RELEASE: "4.7.2-stable"
+  # From https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/SHA512-SUMS.txt
+  GODOT_LINUX_SHA512: "9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65"
+  GODOT_TEMPLATES_SHA512: "ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079"
+  EXPORT_DIR: ${{ github.workspace }}/../web-export
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pages: read # configure-pages reads the site settings
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Restore Godot cache
+        id: godot-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_RELEASE }}-web-nothreads-v1
+
+      - name: Download and verify Godot + Web templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}"
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o godot.zip "${base}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "${base}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+          echo "${GODOT_LINUX_SHA512}  godot.zip" | sha512sum -c -
+          echo "${GODOT_TEMPLATES_SHA512}  templates.tpz" | sha512sum -c -
+          mkdir -p ~/godot-bin
+          unzip -q godot.zip -d ~/godot-bin
+          mv ~/godot-bin/Godot_v${GODOT_RELEASE}_linux.x86_64 ~/godot-bin/godot
+          chmod +x ~/godot-bin/godot
+          # Only the template this preset uses (thread_support=false, extensions_support=false).
+          tdir=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$tdir"
+          unzip -q -j templates.tpz templates/version.txt templates/web_nothreads_release.zip -d "$tdir"
+          rm godot.zip templates.tpz
+
+      - name: Verify engine and template versions
+        run: |
+          set -euo pipefail
+          engine="$(~/godot-bin/godot --headless --version)"
+          tmpl="$(cat ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/version.txt)"
+          echo "Engine: $engine  Templates: $tmpl"
+          [[ "$engine" == ${GODOT_VERSION}.stable.official.* ]] || { echo "::error::Unexpected engine $engine"; exit 1; }
+          [[ "$tmpl" == "${GODOT_VERSION}.stable" ]] || { echo "::error::Unexpected templates $tmpl"; exit 1; }
+          grep -q '"4.7"' project.godot || { echo "::error::project.godot is not a 4.7 project"; exit 1; }
+
+      # A fresh checkout imports fonts after the theme that uses them; the second pass is clean.
+      - name: Import project (two passes)
+        run: |
+          ~/godot-bin/godot --headless --path . --import || true
+          ~/godot-bin/godot --headless --path . --import 2>&1 | tee "$RUNNER_TEMP/import.log"
+          if grep -E "^(SCRIPT )?ERROR" "$RUNNER_TEMP/import.log"; then
+            echo "::error::Errors remain after the second import pass"; exit 1
+          fi
+
+      - name: Export Web preset
+        run: |
+          set -euo pipefail
+          mkdir -p "$EXPORT_DIR"
+          ~/godot-bin/godot --headless --path . --export-release "Web" "$EXPORT_DIR/index.html" 2>&1 | tee "$RUNNER_TEMP/export.log"
+          if grep -E "SCRIPT ERROR|Parse Error|^ERROR" "$RUNNER_TEMP/export.log"; then
+            echo "::error::Export reported errors"; exit 1
+          fi
+
+      - name: Verify export is complete
+        run: |
+          set -euo pipefail
+          cd "$EXPORT_DIR"
+          for f in index.html index.js index.wasm index.pck index.audio.worklet.js index.audio.position.worklet.js; do
+            [ -s "$f" ] || { echo "::error::Missing or empty $f"; exit 1; }
+          done
+          grep -q "GODOT_THREADS_ENABLED = false" index.html || { echo "::error::Threaded export needs COOP/COEP headers that Pages cannot send"; exit 1; }
+          if ls -a | grep -iE "mcp|\.env"; then echo "::error::Development files in export"; exit 1; fi
+          ls -la
+          du -sh .
+
+      - name: Verify PCK has no MCP or development files
+        run: |
+          set -euo pipefail
+          chk="$RUNNER_TEMP/pck-check"
+          mkdir -p "$chk"
+          printf 'config_version=5\n[application]\nconfig/name="pck-check"\n' > "$chk/project.godot"
+          cp tools/ci/check_pck.gd "$chk/"
+          ~/godot-bin/godot --headless --path "$chk" -s check_pck.gd -- "$EXPORT_DIR/index.pck"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ env.EXPORT_DIR }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
