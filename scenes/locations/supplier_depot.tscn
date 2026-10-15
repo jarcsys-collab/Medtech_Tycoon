@@ -1,0 +1,85 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/locations/location_base.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/props/shelf.tscn" id="2"]
+[ext_resource type="Resource" path="res://data/products/pulse_oximeter.tres" id="3"]
+[ext_resource type="Resource" path="res://data/products/bp_monitor.tres" id="4"]
+[ext_resource type="Resource" path="res://data/products/glucose_meter.tres" id="5"]
+[ext_resource type="Resource" path="res://data/products/ecg_patch.tres" id="6"]
+[ext_resource type="Resource" path="res://data/products/handheld_ultrasound.tres" id="7"]
+[ext_resource type="Script" path="res://scripts/props/depot_art.gd" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/props/crate_stack.tscn" id="9"]
+
+[node name="SupplierDepot" type="Node2D"]
+script = ExtResource("1")
+camera_focus = Rect2(0, 165, 780, 1185)
+
+[node name="Art" type="Node2D" parent="."]
+z_index = -10
+script = ExtResource("8")
+
+[node name="Walls" type="StaticBody2D" parent="."]
+
+[node name="WalkBounds" type="CollisionPolygon2D" parent="Walls"]
+build_mode = 1
+polygon = PackedVector2Array(40, 330, 740, 330, 740, 1300, 40, 1300)
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="ShelfPulseOx" parent="Actors" instance=ExtResource("2")]
+position = Vector2(200, 480)
+product = ExtResource("3")
+
+[node name="ShelfBP" parent="Actors" instance=ExtResource("2")]
+position = Vector2(580, 480)
+product = ExtResource("4")
+
+[node name="ShelfGlucose" parent="Actors" instance=ExtResource("2")]
+position = Vector2(200, 730)
+product = ExtResource("5")
+
+[node name="ShelfECG" parent="Actors" instance=ExtResource("2")]
+position = Vector2(580, 730)
+product = ExtResource("6")
+
+[node name="ShelfUltrasound" parent="Actors" instance=ExtResource("2")]
+position = Vector2(390, 980)
+product = ExtResource("7")
+
+[node name="CratesWestMid" parent="Actors" instance=ExtResource("9")]
+position = Vector2(110, 1000)
+
+[node name="CratesEastMid" parent="Actors" instance=ExtResource("9")]
+position = Vector2(670, 1000)
+layers = 3
+
+[node name="CratesWestDock" parent="Actors" instance=ExtResource("9")]
+position = Vector2(100, 1200)
+layers = 1
+
+[node name="CratesEastDock" parent="Actors" instance=ExtResource("9")]
+position = Vector2(680, 1200)
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(390, 1200)
+
+[node name="WanderSpots" type="Node2D" parent="."]
+
+[node name="S1" type="Marker2D" parent="WanderSpots"]
+position = Vector2(390, 1180)
+
+[node name="S2" type="Marker2D" parent="WanderSpots"]
+position = Vector2(130, 600)
+
+[node name="S3" type="Marker2D" parent="WanderSpots"]
+position = Vector2(650, 600)
+
+[node name="S4" type="Marker2D" parent="WanderSpots"]
+position = Vector2(390, 600)
+
+[node name="S5" type="Marker2D" parent="WanderSpots"]
+position = Vector2(130, 860)
+
+[node name="S6" type="Marker2D" parent="WanderSpots"]
+position = Vector2(650, 860)

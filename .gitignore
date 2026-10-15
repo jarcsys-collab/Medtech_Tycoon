@@ -1,0 +1,52 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Export output (Web builds, zips for itch.io); CI rebuilds these from source
+/builds/
+*.zip
+*.pck
+*.wasm
+
+# Read-only HTML/Godot reference packs (excluded by .gdignore; the game does not load them)
+/import demo/
+
+# Godot export credentials / keystores
+export_credentials.cfg
+*.keystore
+*.jks
+
+# Backend (Phase 2+)
+server/node_modules/
+node_modules/
+
+# Secrets and local config; keep committed *.example templates
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials*.json
+*.secret
+*.local.json
+.claude/settings.local.json
+
+# Temp files and OS/editor caches
+*.tmp
+*.temp
+*.bak
+*.log
+*~
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.vs/
+mono_crash.*.json

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bp_monitor"
+display_name = "Digital BP Monitor"
+short_code = "BP"
+description = "Automatic upper-arm blood pressure monitor."
+wholesale_cost = 60
+retail_price = 139
+xp_reward = 20
+reputation_reward = 1
+unlock_level = 1
+max_order_qty = 3
+color = Color(0.88, 0.29, 0.24, 1)

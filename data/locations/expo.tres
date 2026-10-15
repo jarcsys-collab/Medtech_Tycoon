@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LocationData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/location_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"expo"
+display_name = "Trade Expo"
+district = "EXPO DISTRICT"
+description = "Weekend trade shows. Pricey entry, lots of warm leads."
+map_position = Vector2(790, 1040)
+travel_minutes = 40
+fare = 30
+unlock_level = 5
+scene_path = ""
+sort_order = 4

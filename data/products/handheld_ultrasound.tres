@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"handheld_ultrasound"
+display_name = "Handheld Ultrasound"
+short_code = "US"
+description = "Pocket ultrasound probe that pairs with a tablet. Big-ticket item."
+wholesale_cost = 1400
+retail_price = 2900
+xp_reward = 120
+reputation_reward = 4
+unlock_level = 3
+max_order_qty = 1
+color = Color(0.71, 0.55, 0.94, 1)

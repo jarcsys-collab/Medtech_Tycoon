@@ -1,0 +1,86 @@
+[gd_scene format=3 uid="uid://c0wpunefnoiih"]
+
+[ext_resource type="Script" uid="uid://bw4250kkjdd8l" path="res://scripts/locations/coffee_corner.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bbvdxk7sxfol5" path="res://assets/environment/cafe-bg.png" id="2"]
+
+[node name="CoffeeCorner" type="Node2D" unique_id=1570306936]
+script = ExtResource("1")
+camera_focus = Rect2(0, 380, 941, 1060)
+
+[node name="Background" type="Sprite2D" parent="." unique_id=343466539]
+z_index = -10
+texture = ExtResource("2")
+centered = false
+
+[node name="Walls" type="StaticBody2D" parent="." unique_id=1532220099]
+
+[node name="WalkBounds" type="CollisionPolygon2D" parent="Walls" unique_id=2034812420]
+build_mode = 1
+polygon = PackedVector2Array(40, 880, 470, 640, 941, 860, 941, 1200, 600, 1380, 30, 1040)
+
+[node name="CenterTable" type="CollisionPolygon2D" parent="Walls" unique_id=1947183366]
+polygon = PackedVector2Array(330, 850, 460, 730, 700, 790, 730, 1000, 600, 1075, 330, 975)
+
+[node name="LeftTable" type="CollisionPolygon2D" parent="Walls" unique_id=451092431]
+polygon = PackedVector2Array(80, 1000, 190, 940, 390, 1070, 380, 1215, 240, 1215, 80, 1110)
+
+[node name="RightTable" type="CollisionPolygon2D" parent="Walls" unique_id=624986214]
+polygon = PackedVector2Array(735, 1040, 900, 1000, 941, 1030, 941, 1250, 790, 1240)
+
+[node name="Counter" type="CollisionPolygon2D" parent="Walls" unique_id=833967479]
+polygon = PackedVector2Array(500, 470, 941, 560, 941, 850, 720, 770, 500, 650)
+
+[node name="WindowBar" type="CollisionPolygon2D" parent="Walls" unique_id=656154915]
+polygon = PackedVector2Array(0, 700, 420, 520, 440, 650, 160, 850, 0, 870)
+
+[node name="Plants" type="CollisionPolygon2D" parent="Walls" unique_id=830257791]
+polygon = PackedVector2Array(0, 880, 100, 880, 100, 1040, 0, 1040)
+
+[node name="Actors" type="Node2D" parent="." unique_id=1591135990]
+y_sort_enabled = true
+
+[node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1260358397]
+position = Vector2(620, 1230)
+
+[node name="ExitPoint" type="Marker2D" parent="." unique_id=834564076]
+position = Vector2(600, 1345)
+
+[node name="WanderSpots" type="Node2D" parent="." unique_id=625317990]
+
+[node name="S1" type="Marker2D" parent="WanderSpots" unique_id=734619535]
+position = Vector2(620, 1230)
+
+[node name="S2" type="Marker2D" parent="WanderSpots" unique_id=1402430587]
+position = Vector2(600, 1300)
+
+[node name="S3" type="Marker2D" parent="WanderSpots" unique_id=463966846]
+position = Vector2(700, 1170)
+
+[node name="S4" type="Marker2D" parent="WanderSpots" unique_id=1971689270]
+position = Vector2(560, 1170)
+
+[node name="S5" type="Marker2D" parent="WanderSpots" unique_id=1909229407]
+position = Vector2(260, 890)
+
+[node name="S6" type="Marker2D" parent="WanderSpots" unique_id=854483695]
+position = Vector2(480, 690)
+
+[node name="S7" type="Marker2D" parent="WanderSpots" unique_id=499690743]
+position = Vector2(790, 880)
+
+[node name="CustomerSpots" type="Node2D" parent="." unique_id=277364334]
+
+[node name="C1" type="Marker2D" parent="CustomerSpots" unique_id=346548697]
+position = Vector2(260, 890)
+
+[node name="C2" type="Marker2D" parent="CustomerSpots" unique_id=915508245]
+position = Vector2(480, 690)
+
+[node name="C3" type="Marker2D" parent="CustomerSpots" unique_id=1103503980]
+position = Vector2(790, 880)
+
+[node name="C4" type="Marker2D" parent="CustomerSpots" unique_id=1241175644]
+position = Vector2(470, 1150)
+
+[node name="C5" type="Marker2D" parent="CustomerSpots" unique_id=228066813]
+position = Vector2(500, 1250)

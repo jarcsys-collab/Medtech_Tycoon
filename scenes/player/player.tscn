@@ -1,0 +1,55 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/char_frames.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/props/ground_shadow.gd" id="3"]
+[ext_resource type="Shader" path="res://assets/shaders/character_outline.gdshader" id="4"]
+
+[sub_resource type="ShaderMaterial" id="outline"]
+resource_local_to_scene = true
+shader = ExtResource("4")
+shader_parameter/outline_color = Color(0.03, 0.04, 0.05, 0.8)
+shader_parameter/highlight_color = Color(1, 0.82, 0.36, 1)
+shader_parameter/outline_px = 2.0
+shader_parameter/highlight = 0.0
+
+[sub_resource type="CircleShape2D" id="feet"]
+radius = 12.0
+
+[sub_resource type="CircleShape2D" id="reach"]
+radius = 70.0
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 3
+motion_mode = 1
+script = ExtResource("1")
+
+[node name="Shadow" type="Node2D" parent="."]
+position = Vector2(0, -2)
+script = ExtResource("3")
+radius = Vector2(38, 13)
+opacity = 0.42
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+material = SubResource("outline")
+sprite_frames = ExtResource("2")
+animation = &"idle"
+offset = Vector2(0, -117.5)
+
+[node name="Feet" type="CollisionShape2D" parent="."]
+shape = SubResource("feet")
+
+[node name="InteractionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 4
+monitorable = false
+
+[node name="Reach" type="CollisionShape2D" parent="InteractionArea"]
+position = Vector2(0, -20)
+shape = SubResource("reach")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="."]
+path_desired_distance = 6.0
+target_desired_distance = 6.0
+radius = 12.0

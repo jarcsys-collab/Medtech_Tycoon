@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LocationData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/location_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"bank"
+display_name = "City Bank"
+district = "DOWNTOWN"
+description = "Deposit earnings, check credit, or apply for a business loan."
+map_position = Vector2(560, 450)
+travel_minutes = 20
+fare = 8
+unlock_level = 2
+scene_path = ""
+sort_order = 3

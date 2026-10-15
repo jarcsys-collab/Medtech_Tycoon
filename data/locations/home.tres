@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LocationData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/location_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"home"
+display_name = "Home"
+district = "RESIDENTIAL"
+description = "Your apartment. Plan the day, rest, and work the phone."
+map_position = Vector2(545, 1150)
+travel_minutes = 0
+fare = 0
+unlock_level = 1
+scene_path = "res://scenes/locations/apartment.tscn"
+sort_order = 0

@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://coeb70o5nxjop"]
+
+[ext_resource type="Script" uid="uid://boihunfd6riyi" path="res://scripts/locations/location_base.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cbgcr3qvlbci6" path="res://assets/environment/apartment-bg.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://k4ycfu5gwk6j" path="res://assets/environment/bed-layer-full.png" id="3"]
+[ext_resource type="Script" uid="uid://qnfc648abgga" path="res://scripts/props/depth_overlay.gd" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/props/bed.tscn" id="5"]
+
+[node name="Apartment" type="Node2D" unique_id=875097573]
+script = ExtResource("1")
+camera_focus = Rect2(0, 300, 941, 1060)
+
+[node name="Background" type="Sprite2D" parent="." unique_id=87069683]
+z_index = -10
+texture = ExtResource("2")
+centered = false
+
+[node name="Walls" type="StaticBody2D" parent="." unique_id=1367775532]
+
+[node name="WalkBounds" type="CollisionPolygon2D" parent="Walls" unique_id=1445235342]
+build_mode = 1
+polygon = PackedVector2Array(40, 820, 740, 820, 740, 1300, 40, 1300)
+
+[node name="BedBlock" type="CollisionPolygon2D" parent="Walls" unique_id=833003883]
+polygon = PackedVector2Array(0, 890, 270, 835, 515, 965, 515, 1030, 280, 1130, 50, 1010, 0, 975)
+
+[node name="Bed" parent="." unique_id=1469954741 instance=ExtResource("5")]
+position = Vector2(330, 1070)
+highlight_path = NodePath("../BedOverlay")
+marker_offset = Vector2(0, -150)
+
+[node name="BedOverlay" type="Sprite2D" parent="." unique_id=418626059]
+z_index = 1
+texture = ExtResource("3")
+centered = false
+script = ExtResource("4")
+front_line = PackedVector2Array(31, 935, 68, 993, 213, 1076, 278, 1110, 488, 1023, 493, 1013)
+
+[node name="Actors" type="Node2D" parent="." unique_id=341520491]
+y_sort_enabled = true
+
+[node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1811298905]
+position = Vector2(580, 905)
+
+[node name="WanderSpots" type="Node2D" parent="." unique_id=1487569379]
+
+[node name="S1" type="Marker2D" parent="WanderSpots" unique_id=541104262]
+position = Vector2(580, 905)
+
+[node name="S2" type="Marker2D" parent="WanderSpots" unique_id=1883879323]
+position = Vector2(470, 880)
+
+[node name="S3" type="Marker2D" parent="WanderSpots" unique_id=1519371862]
+position = Vector2(610, 890)
+
+[node name="S4" type="Marker2D" parent="WanderSpots" unique_id=2018939550]
+position = Vector2(540, 850)
+
+[node name="S5" type="Marker2D" parent="WanderSpots" unique_id=485012269]
+position = Vector2(420, 1120)
+
+[node name="S6" type="Marker2D" parent="WanderSpots" unique_id=1771338803]
+position = Vector2(400, 1200)
+
+[node name="S7" type="Marker2D" parent="WanderSpots" unique_id=1441784963]
+position = Vector2(470, 1080)

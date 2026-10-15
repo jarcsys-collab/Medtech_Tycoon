@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"glucose_meter"
+display_name = "Glucose Meter Kit"
+short_code = "GLU"
+description = "Blood glucose meter with lancets and test strips."
+wholesale_cost = 25
+retail_price = 59
+xp_reward = 12
+reputation_reward = 1
+unlock_level = 1
+max_order_qty = 5
+color = Color(0.91, 0.76, 0.35, 1)

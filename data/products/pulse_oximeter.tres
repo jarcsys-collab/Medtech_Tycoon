@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"pulse_oximeter"
+display_name = "Pulse Oximeter"
+short_code = "SpO2"
+description = "Fingertip SpO2 and pulse monitor. Cheap, fast-moving clinic staple."
+wholesale_cost = 35
+retail_price = 79
+xp_reward = 15
+reputation_reward = 1
+unlock_level = 1
+max_order_qty = 4
+color = Color(0.37, 0.83, 0.78, 1)

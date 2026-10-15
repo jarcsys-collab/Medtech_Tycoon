@@ -1,0 +1,55 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/locations/coming_soon.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/environment/city-map.png" id="2"]
+
+[node name="ComingSoon" type="Node2D"]
+script = ExtResource("1")
+hosts_player = false
+camera_focus = Rect2(0, 250, 941, 1000)
+backdrop_tint = Color(0.22, 0.24, 0.27, 1)
+
+[node name="Background" type="Sprite2D" parent="."]
+self_modulate = Color(0.4, 0.43, 0.47, 1)
+z_index = -10
+texture = ExtResource("2")
+centered = false
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+layer = 2
+
+[node name="Center" type="CenterContainer" parent="Overlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Card" type="PanelContainer" parent="Overlay/Center"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Overlay/Center/Card"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="PlaceLabel" type="Label" parent="Overlay/Center/Card/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"CaptionLabel"
+text = "PLACE"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="Overlay/Center/Card/VBox"]
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = "SCENE COMING SOON"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="Overlay/Center/Card/VBox"]
+layout_mode = 2
+theme_type_variation = &"SubLabel"
+text = "This place arrives in a later version. Use TRAVEL to go elsewhere."
+horizontal_alignment = 1

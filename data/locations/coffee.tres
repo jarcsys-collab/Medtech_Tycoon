@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LocationData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/location_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"coffee"
+display_name = "Coffee Corner"
+district = "MARKET ST"
+description = "Busy café full of small-business owners. Good for cold leads."
+map_position = Vector2(125, 410)
+travel_minutes = 10
+fare = 5
+unlock_level = 1
+scene_path = "res://scenes/locations/coffee_corner.tscn"
+sort_order = 1
