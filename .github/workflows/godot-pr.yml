@@ -22,7 +22,6 @@ env:
   # Same pins as web.yml (https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/SHA512-SUMS.txt)
   GODOT_LINUX_SHA512: "9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65"
   GODOT_TEMPLATES_SHA512: "ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079"
-  EXPORT_DIR: ${{ github.workspace }}/../web-export
 
 jobs:
   check:
@@ -31,6 +30,17 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Export outside the project, under the runner's temp folder. upload-artifact rejects paths
+      # containing "..", so this is an absolute path; later steps read it as $EXPORT_DIR / env.EXPORT_DIR.
+      - name: Prepare export directory
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/web-export"
+          mkdir -p "$dir"
+          [ -d "$dir" ] || { echo "::error::Could not create $dir"; exit 1; }
+          echo "EXPORT_DIR=$dir" >> "$GITHUB_ENV"
+          echo "Export directory: $dir"
 
       # Same key as web.yml, so pull requests reuse the engine cached by main.
       - name: Restore Godot cache
@@ -91,7 +101,6 @@ jobs:
       - name: Export Web preset
         run: |
           set -euo pipefail
-          mkdir -p "$EXPORT_DIR"
           ~/godot-bin/godot --headless --path . --export-release "Web" "$EXPORT_DIR/index.html" 2>&1 | tee "$RUNNER_TEMP/export.log"
           if grep -E "SCRIPT ERROR|Parse Error|^ERROR" "$RUNNER_TEMP/export.log"; then
             echo "::error::Export reported errors"; exit 1
@@ -106,6 +115,7 @@ jobs:
           done
           grep -q "GODOT_THREADS_ENABLED = false" index.html || { echo "::error::Threaded export needs COOP/COEP headers that Pages cannot send"; exit 1; }
           if ls -a | grep -iE "mcp|\.env"; then echo "::error::Development files in export"; exit 1; fi
+          ls -la
           du -sh .
 
       - name: Verify PCK has no MCP, test or development files
