@@ -4,6 +4,7 @@
 [ext_resource type="SpriteFrames" path="res://assets/characters/char_frames.tres" id="2"]
 [ext_resource type="Script" path="res://scripts/props/ground_shadow.gd" id="3"]
 [ext_resource type="Shader" path="res://assets/shaders/character_outline.gdshader" id="4"]
+[ext_resource type="Script" path="res://scripts/fx/player_marker.gd" id="5"]
 
 [sub_resource type="ShaderMaterial" id="outline"]
 resource_local_to_scene = true
@@ -36,6 +37,10 @@ material = SubResource("outline")
 sprite_frames = ExtResource("2")
 animation = &"idle"
 offset = Vector2(0, -117.5)
+
+[node name="Marker" type="Node2D" parent="."]
+position = Vector2(0, -258)
+script = ExtResource("5")
 
 [node name="Feet" type="CollisionShape2D" parent="."]
 shape = SubResource("feet")

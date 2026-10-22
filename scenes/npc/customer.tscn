@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/npc/customer.gd" id="1"]
-[ext_resource type="SpriteFrames" path="res://assets/characters/char_frames.tres" id="2"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/char_out_frames.tres" id="2"]
 [ext_resource type="Script" path="res://scripts/props/interactable.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/props/ground_shadow.gd" id="4"]
 [ext_resource type="Shader" path="res://assets/shaders/character_outline.gdshader" id="5"]
