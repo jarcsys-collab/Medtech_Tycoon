@@ -1,7 +1,7 @@
 extends SceneTree
 ## CI guard for the Web export (run from an empty throwaway project, never this one):
 ##   godot --headless --path <empty_project> -s check_pck.gd -- <export_dir>/index.pck
-## Fails if development-only MCP files, addons, reference packs or secrets reached the PCK,
+## Fails if development-only MCP files, addons, tests, reference packs or secrets reached the PCK,
 ## or if the MCP runtime autoload is still registered in the exported project settings.
 
 const REQUIRED_AUTOLOADS := ["GameData", "GameState", "SaveSystem", "UIEvents", "Tutorial",
@@ -23,7 +23,7 @@ func _init() -> void:
 	var flagged := 0
 	for f in files:
 		var lf := f.to_lower()
-		if lf.contains("mcp") or lf.begins_with("res://addons/") or lf.contains("import demo") \
+		if lf.contains("mcp") or lf.begins_with("res://addons/") or lf.begins_with("res://tests/") or lf.contains("import demo") \
 				or lf.begins_with("res://builds/") or lf.get_file().begins_with(".env") \
 				or lf.ends_with("mcp_token"):
 			print("FORBIDDEN FILE: ", f)

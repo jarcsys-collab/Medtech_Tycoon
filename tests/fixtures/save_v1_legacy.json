@@ -1,0 +1,46 @@
+{
+	"saved_at": "2026-10-02T11:05:12",
+	"state": {
+		"cash": 9876,
+		"completed_tasks": [
+			"open_phone",
+			"visit_cafe"
+		],
+		"customers": [
+			"Sunrise Family Clinic",
+			"Harbor Pharmacy",
+			"Dr. Lim Dental"
+		],
+		"day": 1,
+		"deals": [],
+		"expenses_total": 124,
+		"inventory": {
+			"bp_monitor": 3,
+			"glucose_meter": 6,
+			"pulse_oximeter": 6
+		},
+		"leads": [
+			{
+				"business": "Pharmacy",
+				"id": 3,
+				"met": false,
+				"name": "Ravi Cruz",
+				"product_id": "pulse_oximeter",
+				"qty": 2,
+				"sold": false,
+				"source": "phone",
+				"tint": "a3c4f0ff"
+			}
+		],
+		"location_id": "home",
+		"minutes": 600,
+		"next_id": 9,
+		"prospects": [],
+		"reputation": 0,
+		"revenue_total": 0,
+		"tutorial_done": false,
+		"tutorial_step": 2,
+		"xp": 20
+	},
+	"version": 1
+}
