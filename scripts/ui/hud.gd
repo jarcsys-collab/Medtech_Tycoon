@@ -43,10 +43,22 @@ const TASK_ICON := preload("res://assets/ui/tasks.png")
 @onready var level_box: VBoxContainer = $TopBar/Row/Level
 @onready var nav_rail: PanelContainer = $NavRail
 @onready var objective_head: Control = $Objective/VBox/Head
-@onready var tutorial_portrait: Control = $Tutorial/Row/Portrait
+@onready var tutorial_portrait: Control = $Tutorial/Row/PortraitFrame/Portrait
+@onready var tutorial_portrait_frame: PanelContainer = $Tutorial/Row/PortraitFrame
+
+## Tutorial card look: Sales Simulator v3 pixel frame (default) or the original flat card.
+enum TutorialFrame { PIXEL, CLASSIC }
 
 ## Tutorial highlight pulse (Medtycoonv2: warm tint on the button to press next).
 const HIGHLIGHT_TINT := Color(1.3, 1.2, 0.85)
+const PIXEL_TUTORIAL_FRAME := preload("res://assets/ui/tutorial_frame_style.tres")
+const PIXEL_PORTRAIT_SLOT := preload("res://assets/ui/tutorial_slot_style.tres")
+
+@export var tutorial_frame := TutorialFrame.PIXEL:
+	set(value):
+		tutorial_frame = value
+		if is_node_ready():
+			_apply_tutorial_frame()
 ## Portrait (phone) layout metrics, in the portrait UI's logical pixels (~ CSS pixels).
 const MOBILE_MARGIN := 6.0
 const MOBILE_NAV_HEIGHT := 60.0
@@ -96,6 +108,7 @@ func _ready() -> void:
 			b.chosen.connect(func(_id): _set_more_open(false))
 	_nav_order.assign(nav_list.get_children())
 	_build_mobile_controls()
+	_apply_tutorial_frame()
 	tutorial.gui_input.connect(_on_tutorial_input)
 	skip_button.pressed.connect(Tutorial.skip)
 	Tutorial.step_changed.connect(func(_step: Dictionary): _refresh_tutorial())
@@ -244,7 +257,7 @@ func _refresh_tutorial() -> void:
 	if portrait:
 		# Bottom sheet: with a menu open only the instruction stays (no portrait / hint lines).
 		var mini := _active_nav != &""
-		_swap(tutorial_portrait, {"visible": not mini})
+		_swap(tutorial_portrait_frame, {"visible": not mini})
 		_swap(hint, {"visible": wants_click or not mini})
 	if changed:
 		UIAnim.pulse(tutorial, 1.04)  # Medtycoonv2: small pop so a new step is noticed
@@ -263,6 +276,17 @@ func _process(_delta: float) -> void:
 	# Portrait: a secondary item lives in the MORE sheet, so point at MORE while it is closed.
 	var more_lit := lit and _more_button.visible and not _more_sheet.visible and StringName(target) in MOBILE_SECONDARY
 	_more_button.modulate = HIGHLIGHT_TINT if more_lit else Color.WHITE
+
+
+## Pixel: 9-slice frame and portrait slot from the Sales Simulator dialog box (tools/build_tutorial_frame.gd).
+## Classic: the theme's flat panel and no slot frame, exactly as before G1b.
+func _apply_tutorial_frame() -> void:
+	if tutorial_frame == TutorialFrame.PIXEL:
+		tutorial.add_theme_stylebox_override(&"panel", PIXEL_TUTORIAL_FRAME)
+		tutorial_portrait_frame.add_theme_stylebox_override(&"panel", PIXEL_PORTRAIT_SLOT)
+	else:
+		tutorial.remove_theme_stylebox_override(&"panel")
+		tutorial_portrait_frame.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
 
 
 func _on_tutorial_input(event: InputEvent) -> void:

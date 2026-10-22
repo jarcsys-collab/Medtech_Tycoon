@@ -26,9 +26,15 @@ const BACKDROP_BLUR := preload("res://assets/shaders/backdrop_blur.gdshader")
 ## Darkening/tint of the blurred backdrop (alpha 0 disables it).
 @export var backdrop_tint := Color(0.42, 0.45, 0.5, 1.0)
 @export var feather_edges := true
+## Optional "Background" art from 4:30 PM (GameState.is_evening); same size and layout as the day art.
+@export var evening_background: Texture2D
+
+const TIME_FADE := 0.6
 
 var location_data: LocationData
 var nav_region: NavigationRegion2D
+var _day_background: Texture2D
+var _backdrop: Sprite2D
 
 @onready var actors: Node2D = get_node_or_null("Actors")
 
@@ -51,6 +57,30 @@ func setup(data: LocationData, player: Player) -> void:
 func _ready() -> void:
 	_build_navigation()
 	_build_backdrop()
+	var bg := get_node_or_null("Background") as Sprite2D
+	if evening_background and bg:
+		_day_background = bg.texture
+		GameState.stats_changed.connect(_update_time_of_day)
+		_update_time_of_day(true)
+
+
+## Day/evening background swap; a copy of the old art fades out on top so the change is soft.
+func _update_time_of_day(instant := false) -> void:
+	var bg := get_node_or_null("Background") as Sprite2D
+	var want := evening_background if GameState.is_evening() else _day_background
+	if bg == null or bg.texture == want:
+		return
+	if not instant and is_inside_tree():
+		var old := bg.duplicate() as Sprite2D
+		old.name = "BackgroundFadeOut"
+		add_child(old)
+		move_child(old, bg.get_index() + 1)
+		var t := old.create_tween()
+		t.tween_property(old, "modulate:a", 0.0, TIME_FADE)
+		t.tween_callback(old.queue_free)
+	bg.texture = want
+	if _backdrop:
+		_backdrop.texture = want
 
 
 func _build_backdrop() -> void:
@@ -61,9 +91,10 @@ func _build_backdrop() -> void:
 		var fade := ShaderMaterial.new()
 		fade.shader = EDGE_FADE
 		bg.material = fade
-		# Full-size overlays cut from the same image must fade identically.
+		# Full-size overlays cut from the same image must fade identically. An overlay with its own
+		# material (e.g. the bed glow, which includes the same edge fade) keeps it.
 		for child in get_children():
-			if child is DepthOverlay and child.texture and child.texture.get_size() == bg.texture.get_size():
+			if child is DepthOverlay and child.material == null and child.texture and child.texture.get_size() == bg.texture.get_size():
 				child.material = fade
 	if backdrop_tint.a <= 0.0:
 		return
@@ -79,6 +110,7 @@ func _build_backdrop() -> void:
 	backdrop.position = bg.position + (bg.texture.get_size() / 2.0 if not bg.centered else Vector2.ZERO)
 	add_child(backdrop)
 	move_child(backdrop, 0)
+	_backdrop = backdrop
 
 
 func get_wander_spots(group_node := "WanderSpots") -> Array[Vector2]:

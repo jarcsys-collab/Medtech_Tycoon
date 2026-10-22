@@ -5,15 +5,39 @@ extends Node
 ## Exit code 0 = all passed, 1 = a failure. Each test_* method gets a fresh temp directory and
 ## SaveSystem pointed into it; the player's real save is checked to be byte-identical afterwards.
 
-const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd"]
+const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd",
+	"res://tests/test_environments.gd"]
 
 var tmp_root := ""
 var _failures: Array[String] = []
 var _current := ""
 var _checks := 0
+var _script_errors := ScriptErrorLog.new()
+
+
+## A script error inside a test ends that test's function silently; this logger records it so the
+## test fails instead of passing with its remaining checks skipped.
+class ScriptErrorLog extends Logger:
+	var errors: Array[String] = []
+	var _lock := Mutex.new()
+
+	func _log_error(function: String, file: String, line: int, code: String, rationale: String,
+			_editor_notify: bool, error_type: int, _script_backtraces: Array[ScriptBacktrace]) -> void:
+		if error_type == ERROR_TYPE_SCRIPT:
+			_lock.lock()
+			errors.append("%s (%s:%d %s)" % [rationale if rationale != "" else code, file.get_file(), line, function])
+			_lock.unlock()
+
+	func take() -> Array[String]:
+		_lock.lock()
+		var out := errors.duplicate()
+		errors.clear()
+		_lock.unlock()
+		return out
 
 
 func _ready() -> void:
+	OS.add_logger(_script_errors)
 	_run.call_deferred()
 
 
@@ -41,7 +65,10 @@ func _run() -> void:
 			_current = "%s::%s" % [path.get_file().get_basename(), name]
 			var failures_before := _failures.size()
 			_isolate(name)
+			_script_errors.take()
 			await suite.call(name)
+			for e in _script_errors.take():
+				check(false, "script error: " + e)
 			if _failures.size() == failures_before:
 				passed += 1
 				print("  PASS  ", _current)
