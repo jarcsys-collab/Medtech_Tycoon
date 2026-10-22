@@ -4,10 +4,22 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/phone_row.tscn" id="2"]
 [ext_resource type="Texture2D" path="res://assets/ui/pLeads.png" id="3"]
 [ext_resource type="Texture2D" path="res://assets/ui/pSched.png" id="4"]
-[ext_resource type="Texture2D" path="res://assets/ui/pMsg.png" id="5"]
+[ext_resource type="Texture2D" uid="uid://dlt25rdihvsm8" path="res://assets/ui/pMsg-centered.png" id="5"]
 [ext_resource type="Texture2D" path="res://assets/ui/pCust.png" id="6"]
 [ext_resource type="Texture2D" path="res://assets/ui/pQuote.png" id="7"]
 [ext_resource type="Texture2D" path="res://assets/ui/pColl.png" id="8"]
+[ext_resource type="Texture2D" uid="uid://c7ogx4cs3gwqv" path="res://assets/ui/phone-sunrise.png" id="9"]
+
+[sub_resource type="StyleBoxFlat" id="title_pill"]
+content_margin_left = 10.0
+content_margin_top = 3.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.039, 0.063, 0.067, 0.6)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Phone" type="Control"]
 layout_mode = 3
@@ -68,16 +80,55 @@ theme_type_variation = &"CaptionLabel"
 theme_override_colors/font_color = Color(0.373, 0.827, 0.416, 1)
 text = "LV 1"
 
-[node name="Title" type="Label" parent="Frame/Screen/VBox"]
+[node name="TopBanner" type="Control" parent="Frame/Screen/VBox"]
+custom_minimum_size = Vector2(0, 92)
+layout_mode = 2
+mouse_filter = 2
+clip_contents = true
+
+[node name="Banner" type="TextureRect" parent="Frame/Screen/VBox/TopBanner"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Center" type="CenterContainer" parent="Frame/Screen/VBox/TopBanner"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitlePill" type="PanelContainer" parent="Frame/Screen/VBox/TopBanner/Center"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("title_pill")
+
+[node name="Labels" type="VBoxContainer" parent="Frame/Screen/VBox/TopBanner/Center/TitlePill"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Frame/Screen/VBox/TopBanner/Center/TitlePill/Labels"]
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
 theme_override_font_sizes/font_size = 22
 text = "SALES PHONE"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="Frame/Screen/VBox"]
+[node name="Subtitle" type="Label" parent="Frame/Screen/VBox/TopBanner/Center/TitlePill/Labels"]
 layout_mode = 2
 theme_type_variation = &"SubLabel"
+theme_override_colors/font_color = Color(0.624, 0.831, 0.784, 1)
 text = "Your day, your deals."
 horizontal_alignment = 1
 

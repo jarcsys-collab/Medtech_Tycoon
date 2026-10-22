@@ -7,6 +7,13 @@ signal close_requested
 ## Presentation hook (audio): the visible page changed (&"" = phone home screen).
 signal page_changed(page: StringName)
 
+## Header art by time of day (Sales Simulator v3 phone banners).
+const BANNERS := {
+	&"morning": preload("res://assets/ui/phone-sunrise.png"),
+	&"afternoon": preload("res://assets/ui/phone-afternoon.png"),
+	&"evening": preload("res://assets/ui/phone-evening.png"),
+}
+
 const MESSAGES := [
 	["Dana (Regional Manager)", "Welcome aboard! Your territory is yours to build. Close your first deal this week."],
 	["Harbor Supplier Depot", "Wholesale restocks available at our Harbor depot once you reach Level 2."],
@@ -15,6 +22,7 @@ const MESSAGES := [
 @onready var backdrop: Control = $Backdrop
 @onready var time_label: Label = %TimeLabel
 @onready var level_label: Label = %PhoneLevel
+@onready var banner: TextureRect = %Banner
 @onready var home: VBoxContainer = %Home
 @onready var home_scroll: ScrollContainer = $Frame/Screen/VBox/HomeScroll
 @onready var page: VBoxContainer = %Page
@@ -95,9 +103,11 @@ func refresh() -> void:
 		return
 	time_label.text = GameState.time_label()
 	level_label.text = "LV %d" % GameState.level
+	banner.texture = BANNERS[GameState.time_slot()]
 	_set_row(&"Leads", "%d open leads" % GameState.leads.size())
 	_set_row(&"Schedule", "0 meetings today")
 	_set_row(&"Messages", "0 unread" if _messages_read else "%d unread" % MESSAGES.size())
+	(home.get_node(^"Messages") as PhoneRow).badge = 0 if _messages_read else MESSAGES.size()
 	_set_row(&"Customers", "%d customers" % GameState.customers.size())
 	_set_row(&"Quotes", "0 pending")
 	_set_row(&"Collections", "$0 due today")

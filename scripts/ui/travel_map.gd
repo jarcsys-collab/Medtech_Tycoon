@@ -11,6 +11,8 @@ const PIN_SCENE := preload("res://scenes/ui/map_pin.tscn")
 const ROI := Rect2(0, 90, 941, 1150)
 const MIN_SCALE := 0.62
 const MAX_SCALE := 1.0
+## Same layout as the day map (pins stay put); shown from 4:30 PM (GameState.is_evening).
+const EVENING_MAP := preload("res://assets/environment/city-map-evening.png")
 
 @onready var map_scroll: ScrollContainer = %MapScroll
 @onready var map_canvas: Control = %MapCanvas
@@ -28,11 +30,13 @@ const MAX_SCALE := 1.0
 
 var _dest: StringName = &""
 var _pins := {}
+var _day_map: Texture2D
 var _scale := 1.0
 var _dragging := false
 
 
 func _ready() -> void:
+	_day_map = map_image.texture
 	for loc in GameData.locations:
 		var pin: MapPin = PIN_SCENE.instantiate()
 		pins_layer.add_child(pin)
@@ -87,6 +91,9 @@ func apply_layout(portrait: bool, insets: Vector2) -> void:
 func refresh() -> void:
 	if not is_node_ready():
 		return
+	var map_tex := EVENING_MAP if GameState.is_evening() else _day_map
+	map_image.texture = map_tex
+	$Backdrop.texture = map_tex
 	var level := GameState.level
 	var open_count := 0
 	for loc in GameData.locations:

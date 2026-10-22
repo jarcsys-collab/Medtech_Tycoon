@@ -2,12 +2,14 @@
 
 [ext_resource type="Script" path="res://scripts/locations/coming_soon.gd" id="1"]
 [ext_resource type="Texture2D" path="res://assets/environment/city-map.png" id="2"]
+[ext_resource type="Texture2D" uid="uid://cj0knha2okohw" path="res://assets/environment/city-map-evening.png" id="3"]
 
 [node name="ComingSoon" type="Node2D"]
 script = ExtResource("1")
 hosts_player = false
 camera_focus = Rect2(0, 250, 941, 1000)
 backdrop_tint = Color(0.22, 0.24, 0.27, 1)
+evening_background = ExtResource("3")
 
 [node name="Background" type="Sprite2D" parent="."]
 self_modulate = Color(0.4, 0.43, 0.47, 1)

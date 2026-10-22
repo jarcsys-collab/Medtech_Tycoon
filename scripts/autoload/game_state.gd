@@ -24,6 +24,9 @@ signal task_completed(task_id: String)
 const START_CASH := 10000          # Medtycoonv1: cash: 10000
 const START_MINUTES := 8 * 60 + 30 # Medtycoonv1: minutes: 510 (08:30 AM)
 const LATE_MINUTES := 22 * 60
+## Time-of-day boundaries for visuals (Sales Simulator v3 slots). Derived from `minutes`; not saved.
+const AFTERNOON_START := 12 * 60 + 30   # 12:30 PM
+const EVENING_START := 16 * 60 + 30     # 4:30 PM
 const STARTING_LEADS := 5          # Medtycoonv1 HUD: LEADS 5
 const DAILY_NEW_LEADS := 2
 const CAFE_PROSPECTS := 3
@@ -118,6 +121,19 @@ func time_label() -> String:
 	var h := floori(minutes / 60.0) % 24
 	var h12 := ((h + 11) % 12) + 1
 	return "%02d:%02d %s" % [h12, minutes % 60, "AM" if h < 12 else "PM"]
+
+
+## &"morning" before 12:30 PM, &"afternoon" until 4:30 PM, &"evening" after. Visuals only.
+func time_slot() -> StringName:
+	if minutes >= EVENING_START:
+		return &"evening"
+	if minutes >= AFTERNOON_START:
+		return &"afternoon"
+	return &"morning"
+
+
+func is_evening() -> bool:
+	return time_slot() == &"evening"
 
 
 func date_label() -> String:
