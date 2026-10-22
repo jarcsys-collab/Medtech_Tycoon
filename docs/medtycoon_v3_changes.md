@@ -105,7 +105,8 @@ Legend: ✅ exists · 🟡 partial · ❌ new · ⚠️ conflicts with current d
 | Phase | Scope | Assets from the ZIP | Save change |
 |---|---|---|---|
 | G0 (done) | Save validation, migration and backups; tests; PR checks; this document | none | none (still version 1) |
-| **G1** | Visual polish | `godot/SalesSimulator/assets/art/char-idle-out-4.png`, `char-walk-out.png`, `maya-idle.png`, `apartment-bg.png`; `assets/cafe-bg-evening.png`, `assets/city-map-evening.png`; `assets/ui/dialog-box.png`, `phone-sunrise/afternoon/evening.png`, `pTicket.png`, `pMsg-centered.png` | none |
+| **G1a** | Characters and movement: outdoor outfit (player outside home, café customers with lighter tints), step-wander (default; `WanderBrain.Style.CONTINUOUS` keeps the V1 wander), walk holds its first frame only while wandering | `godot/SalesSimulator/assets/art/char-idle-out-4.png`, `char-walk-out.png` (same pixels as the `assets/` copies) → `assets/characters/` | none |
+| **G1b** | Environments and UI: apartment touch-up, evening café and map, phone banners, pixel tutorial frame (switchable), Messages icon, bed glow | `apartment-bg.png`; `assets/cafe-bg-evening.png`, `assets/city-map-evening.png`; `assets/ui/dialog-box.png`, `phone-sunrise/afternoon/evening.png`, `pMsg-centered.png`, `bed-layer-cropped.png` | none |
 | G2 | Time slots and end-of-day summary | — | optional day log |
 | G3 | Energy and Stamina | — | version 2 (`energy`, `stamina`) |
 | G4 | Named clients, booking, pitch meetings, relationships | — | `client_states` |

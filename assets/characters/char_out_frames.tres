@@ -1,0 +1,101 @@
+[gd_resource type="SpriteFrames" load_steps=15 format=3]
+
+[ext_resource type="Texture2D" uid="uid://clv7vjfyove4j" path="res://assets/characters/char-idle-out-4.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://cf6k0h7265w2c" path="res://assets/characters/char-walk-out.png" id="2"]
+
+[sub_resource type="AtlasTexture" id="idle_0"]
+atlas = ExtResource("1")
+region = Rect2(0, 0, 100, 235)
+
+[sub_resource type="AtlasTexture" id="idle_1"]
+atlas = ExtResource("1")
+region = Rect2(100, 0, 100, 235)
+
+[sub_resource type="AtlasTexture" id="idle_2"]
+atlas = ExtResource("1")
+region = Rect2(200, 0, 100, 235)
+
+[sub_resource type="AtlasTexture" id="idle_3"]
+atlas = ExtResource("1")
+region = Rect2(300, 0, 100, 235)
+
+[sub_resource type="AtlasTexture" id="walk_0"]
+atlas = ExtResource("2")
+region = Rect2(0, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_1"]
+atlas = ExtResource("2")
+region = Rect2(130, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_2"]
+atlas = ExtResource("2")
+region = Rect2(260, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_3"]
+atlas = ExtResource("2")
+region = Rect2(390, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_4"]
+atlas = ExtResource("2")
+region = Rect2(520, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_5"]
+atlas = ExtResource("2")
+region = Rect2(650, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_6"]
+atlas = ExtResource("2")
+region = Rect2(780, 0, 130, 235)
+
+[sub_resource type="AtlasTexture" id="walk_7"]
+atlas = ExtResource("2")
+region = Rect2(910, 0, 130, 235)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("idle_3")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("walk_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("walk_7")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 11.0
+}]

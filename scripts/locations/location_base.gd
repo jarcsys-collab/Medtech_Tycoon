@@ -17,6 +17,8 @@ const BACKDROP_BLUR := preload("res://assets/shaders/backdrop_blur.gdshader")
 @export var world_size := Vector2(941, 1672)
 ## False for placeholder scenes (Medtycoonv1 hides the character when there is no scene).
 @export var hosts_player := true
+## Player outfit here: outdoor clothes everywhere except home (Sales Simulator v3).
+@export var player_outdoor_outfit := true
 @export var nav_agent_radius := 14.0
 @export_group("Presentation")
 ## World-space area the GameCamera keeps framed. Empty = whole world_size.
@@ -40,6 +42,7 @@ func setup(data: LocationData, player: Player) -> void:
 	if not hosts_player or actors == null:
 		return
 	actors.add_child(player)
+	player.set_outdoor(player_outdoor_outfit)
 	var spawn := get_node_or_null("PlayerSpawn") as Marker2D
 	player.global_position = spawn.global_position if spawn else world_size / 2.0
 	player.enter_location(get_wander_spots())

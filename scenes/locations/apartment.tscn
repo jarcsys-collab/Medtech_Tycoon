@@ -8,6 +8,7 @@
 
 [node name="Apartment" type="Node2D" unique_id=875097573]
 script = ExtResource("1")
+player_outdoor_outfit = false
 camera_focus = Rect2(0, 300, 941, 1060)
 
 [node name="Background" type="Sprite2D" parent="." unique_id=87069683]

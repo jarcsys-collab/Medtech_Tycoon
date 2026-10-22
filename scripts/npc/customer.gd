@@ -3,7 +3,12 @@ extends CharacterBody2D
 ## Café prospect. E to introduce yourself (becomes a lead), E again to close the deal in person.
 ## Bubble: "?" = not met yet, "$" = lead you can fulfil now, "..." = lead but not enough stock.
 
-@export var walk_speed := 60.0
+const TINT_SOFTEN := 0.7
+
+@export var walk_speed := 60.0          # leaving, and CONTINUOUS wandering
+## STEPS = short strides with pauses (Sales Simulator v3); CONTINUOUS = the original V1 wander.
+@export var wander_style := WanderBrain.Style.STEPS
+@export var wander_step_speed := 26.0
 
 var lead_id := -1
 var _wander: WanderBrain
@@ -21,8 +26,9 @@ func _ready() -> void:
 	_wander = WanderBrain.new(agent, randf_range(2.0, 6.0))
 	_wander.min_wait = 4.0
 	_wander.max_wait = 10.0
-	sprite.frame = randi() % 8
+	_wander.style = wander_style
 	sprite.play(&"idle")
+	sprite.frame = randi() % sprite.sprite_frames.get_frame_count(&"idle")
 	talk.interacted.connect(_on_talk)
 	GameState.leads_changed.connect(_refresh)
 	GameState.inventory_changed.connect(_refresh)
@@ -34,8 +40,9 @@ func setup(prospect_id: int, spots: Array[Vector2], exit_point: Vector2) -> void
 	_wander.spots = spots
 	var p := GameState.find_prospect(lead_id)
 	if p.has("tint"):
-		# Softened so tints read as "different person" without discolouring skin.
-		sprite.modulate = Color.html(p.tint).lerp(Color.WHITE, 0.45)
+		# Softened so tints read as "different person" without discolouring skin. The outdoor sheet's
+		# white shirt shows tint strongly, so it is lighter than the V1 value (0.45).
+		sprite.modulate = Color.html(p.tint).lerp(Color.WHITE, TINT_SOFTEN)
 	_refresh()
 
 
@@ -51,15 +58,23 @@ func _physics_process(delta: float) -> void:
 			return
 		velocity = global_position.direction_to(agent.get_next_path_position()) * walk_speed * 1.4
 	else:
-		velocity = _wander.get_velocity(self, delta, walk_speed)
+		var speed := wander_step_speed if wander_style == WanderBrain.Style.STEPS else walk_speed
+		velocity = _wander.get_velocity(self, delta, speed)
 	var before := global_position
 	move_and_slide()
 	if not _leaving:
 		_wander.report_motion(global_position.distance_to(before), velocity.length() * delta, delta)
 	if absf(velocity.x) > 0.1:
 		sprite.flip_h = velocity.x < 0.0
-	var anim := &"walk" if velocity.length() > 1.0 else &"idle"
-	if sprite.animation != anim:
+	var walking := velocity.length() > 1.0
+	var anim := &"walk" if walking else &"idle"
+	if walking and not _leaving and wander_style == WanderBrain.Style.STEPS:
+		# Sales Simulator v3: wandering holds the first step frame.
+		if sprite.animation != anim or sprite.frame != 0 or sprite.is_playing():
+			sprite.animation = anim
+			sprite.frame = 0
+			sprite.pause()
+	elif sprite.animation != anim or not sprite.is_playing():
 		sprite.play(anim)
 
 

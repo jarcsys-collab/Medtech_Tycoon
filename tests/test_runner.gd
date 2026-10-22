@@ -5,7 +5,7 @@ extends Node
 ## Exit code 0 = all passed, 1 = a failure. Each test_* method gets a fresh temp directory and
 ## SaveSystem pointed into it; the player's real save is checked to be byte-identical afterwards.
 
-const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd"]
+const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd"]
 
 var tmp_root := ""
 var _failures: Array[String] = []
@@ -25,7 +25,13 @@ func _run() -> void:
 	var passed := 0
 	var total := 0
 	for path in SUITES:
-		var suite: Object = load(path).new()
+		var script := load(path) as GDScript
+		if script == null or not script.can_instantiate():
+			_current = path
+			check(false, "test suite failed to load (parse error?)")
+			total += 1
+			continue
+		var suite: Object = script.new()
 		suite.set("t", self)
 		for m in suite.get_method_list():
 			var name: String = m.name
