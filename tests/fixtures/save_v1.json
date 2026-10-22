@@ -1,0 +1,94 @@
+{
+	"saved_at": "2026-10-02T13:43:36",
+	"state": {
+		"cash": 10422,
+		"completed_tasks": [
+			"open_phone",
+			"visit_cafe",
+			"meet_prospect",
+			"first_deal",
+			"reach_lv2",
+			"sleep"
+		],
+		"customers": [
+			"Sunrise Family Clinic",
+			"Harbor Pharmacy",
+			"Dr. Lim Dental",
+			"Tomas Santos (Diagnostic Lab)"
+		],
+		"day": 3,
+		"deals": [
+			{
+				"amount": 480,
+				"customer": "Tomas Santos (Diagnostic Lab)",
+				"day": 1,
+				"in_person": true,
+				"product_id": "bp_monitor",
+				"qty": 3
+			}
+		],
+		"expenses_total": 58,
+		"inventory": {
+			"glucose_meter": 6,
+			"pulse_oximeter": 6
+		},
+		"leads": [
+			{
+				"business": "Home Care Agency",
+				"id": 1,
+				"met": false,
+				"name": "Maria Park",
+				"product_id": "bp_monitor",
+				"qty": 2,
+				"sold": false,
+				"source": "phone",
+				"tint": "c7fd9eff"
+			},
+			{
+				"business": "Sports Clinic",
+				"id": 15,
+				"met": false,
+				"name": "Elena Lim",
+				"product_id": "pulse_oximeter",
+				"qty": 3,
+				"sold": false,
+				"source": "phone",
+				"tint": "966ae0ff"
+			}
+		],
+		"location_id": "coffee",
+		"minutes": 520,
+		"next_id": 19,
+		"prospects": [
+			{
+				"business": "Pharmacy",
+				"id": 16,
+				"met": false,
+				"name": "Lea Haddad",
+				"product_id": "glucose_meter",
+				"qty": 1,
+				"sold": false,
+				"source": "cafe",
+				"tint": "e3cc6bff"
+			},
+			{
+				"business": "Dental Office",
+				"id": 17,
+				"met": true,
+				"name": "Lea Tan",
+				"product_id": "glucose_meter",
+				"qty": 3,
+				"sold": false,
+				"source": "cafe",
+				"tint": "63e190ff"
+			}
+		],
+		"reputation": 2,
+		"revenue_total": 480,
+		"tutorial_done": true,
+		"tutorial_step": 1,
+		"tutorial_version": 2,
+		"xp": 125
+	},
+	"version": 1
+}

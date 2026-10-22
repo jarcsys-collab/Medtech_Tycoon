@@ -185,7 +185,7 @@ func _save() -> void:
 
 
 func _load() -> void:
-	UIEvents.toast("Game loaded" if SaveSystem.load_game() else "No save found")
+	UIEvents.toast("Game loaded" if SaveSystem.load_game() else SaveSystem.load_failure_message())
 
 
 func _confirm_new_game() -> void:

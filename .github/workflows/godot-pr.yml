@@ -1,0 +1,126 @@
+# Checks the Godot game on every pull request: import, automated tests, and a full Web export,
+# using the same pinned engine and checks as the Pages workflow. It never deploys anything and
+# holds no secrets; the exported build is attached to the run so it can be tried before merging.
+# Runs on every pull request (no path filters), so it can be a required check without blocking
+# docs-only or backend-only PRs.
+name: Godot PR checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godot-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GODOT_RELEASE: "4.7.2-stable"
+  # Same pins as web.yml (https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/SHA512-SUMS.txt)
+  GODOT_LINUX_SHA512: "9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65"
+  GODOT_TEMPLATES_SHA512: "ca4d71c4d7b81dfc15d1a98baa07534aa95b03fdda78a0075b06672e1648d2e5f40980c9adc28d23e1b92e732ee7bf3461997aa804af74ec2fcd7a93ccb84079"
+  EXPORT_DIR: ${{ github.workspace }}/../web-export
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Same key as web.yml, so pull requests reuse the engine cached by main.
+      - name: Restore Godot cache
+        id: godot-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_RELEASE }}-web-nothreads-v1
+
+      - name: Download and verify Godot + Web templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}"
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o godot.zip "${base}/Godot_v${GODOT_RELEASE}_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "${base}/Godot_v${GODOT_RELEASE}_export_templates.tpz"
+          echo "${GODOT_LINUX_SHA512}  godot.zip" | sha512sum -c -
+          echo "${GODOT_TEMPLATES_SHA512}  templates.tpz" | sha512sum -c -
+          mkdir -p ~/godot-bin
+          unzip -q godot.zip -d ~/godot-bin
+          mv ~/godot-bin/Godot_v${GODOT_RELEASE}_linux.x86_64 ~/godot-bin/godot
+          chmod +x ~/godot-bin/godot
+          tdir=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$tdir"
+          unzip -q -j templates.tpz templates/version.txt templates/web_nothreads_release.zip -d "$tdir"
+          rm godot.zip templates.tpz
+
+      - name: Verify engine and template versions
+        run: |
+          set -euo pipefail
+          engine="$(~/godot-bin/godot --headless --version)"
+          tmpl="$(cat ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/version.txt)"
+          echo "Engine: $engine  Templates: $tmpl"
+          [[ "$engine" == ${GODOT_VERSION}.stable.official.* ]] || { echo "::error::Unexpected engine $engine"; exit 1; }
+          [[ "$tmpl" == "${GODOT_VERSION}.stable" ]] || { echo "::error::Unexpected templates $tmpl"; exit 1; }
+
+      - name: Import project (two passes)
+        run: |
+          ~/godot-bin/godot --headless --path . --import || true
+          ~/godot-bin/godot --headless --path . --import 2>&1 | tee "$RUNNER_TEMP/import.log"
+          if grep -E "^(SCRIPT )?ERROR" "$RUNNER_TEMP/import.log"; then
+            echo "::error::Errors remain after the second import pass"; exit 1
+          fi
+
+      # Save compatibility and main-scene smoke tests (tests/). The runner's exit code is the result;
+      # failed checks also print as ERROR lines, so the log is not grepped here.
+      - name: Run automated tests
+        run: |
+          set -o pipefail
+          timeout 600 ~/godot-bin/godot --headless --path . res://tests/test_runner.tscn 2>&1 | tee "$RUNNER_TEMP/tests.log"
+          if grep -E "SCRIPT ERROR|Parse Error" "$RUNNER_TEMP/tests.log"; then
+            echo "::error::Script errors while running tests"; exit 1
+          fi
+
+      - name: Export Web preset
+        run: |
+          set -euo pipefail
+          mkdir -p "$EXPORT_DIR"
+          ~/godot-bin/godot --headless --path . --export-release "Web" "$EXPORT_DIR/index.html" 2>&1 | tee "$RUNNER_TEMP/export.log"
+          if grep -E "SCRIPT ERROR|Parse Error|^ERROR" "$RUNNER_TEMP/export.log"; then
+            echo "::error::Export reported errors"; exit 1
+          fi
+
+      - name: Verify export is complete
+        run: |
+          set -euo pipefail
+          cd "$EXPORT_DIR"
+          for f in index.html index.js index.wasm index.pck index.audio.worklet.js index.audio.position.worklet.js; do
+            [ -s "$f" ] || { echo "::error::Missing or empty $f"; exit 1; }
+          done
+          grep -q "GODOT_THREADS_ENABLED = false" index.html || { echo "::error::Threaded export needs COOP/COEP headers that Pages cannot send"; exit 1; }
+          if ls -a | grep -iE "mcp|\.env"; then echo "::error::Development files in export"; exit 1; fi
+          du -sh .
+
+      - name: Verify PCK has no MCP, test or development files
+        run: |
+          set -euo pipefail
+          chk="$RUNNER_TEMP/pck-check"
+          mkdir -p "$chk"
+          printf 'config_version=5\n[application]\nconfig/name="pck-check"\n' > "$chk/project.godot"
+          cp tools/ci/check_pck.gd "$chk/"
+          ~/godot-bin/godot --headless --path "$chk" -s check_pck.gd -- "$EXPORT_DIR/index.pck"
+
+      - name: Attach the Web build to this run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-build-pr-${{ github.event.pull_request.number || github.run_id }}
+          path: ${{ env.EXPORT_DIR }}
+          retention-days: 7
+          if-no-files-found: error

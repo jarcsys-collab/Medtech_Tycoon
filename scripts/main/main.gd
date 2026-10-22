@@ -73,6 +73,8 @@ func _ready() -> void:
 	get_tree().root.size_changed.connect(_queue_layout)
 	update_responsive_layout()
 	select(&"phone")  # Medtycoonv1 phoneOpenOnStart = true
+	if SaveSystem.last_error != "":
+		UIEvents.toast(SaveSystem.load_failure_message())
 	fader.fade_to(0.0, 0.5)
 
 
@@ -92,7 +94,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"quick_save"):
 		UIEvents.toast("Game saved" if SaveSystem.save_game() else "Save failed")
 	elif event.is_action_pressed(&"quick_load"):
-		UIEvents.toast("Game loaded" if SaveSystem.load_game() else "No save found")
+		UIEvents.toast("Game loaded" if SaveSystem.load_game() else SaveSystem.load_failure_message())
 
 
 ## Side-nav selection. Phone and Travel toggle; other items open the info panel.
