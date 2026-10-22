@@ -29,6 +29,7 @@ const OUTDOOR_FRAMES := preload("res://assets/characters/char_out_frames.tres")
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var interaction_area: Area2D = $InteractionArea
 @onready var nav_agent: NavigationAgent2D = $NavigationAgent2D
+@onready var marker: PlayerMarker = $Marker
 
 var input_enabled := true:
 	set(value):
@@ -256,6 +257,8 @@ func _set_focus(target: Interactable) -> void:
 	_focus = target
 	if _focus:
 		_focus.set_highlighted(true)
+	# The [E] badge and customer bubbles use the space above heads while something is in reach.
+	marker.suppressed = _focus != null
 	interactable_changed.emit(target)
 
 

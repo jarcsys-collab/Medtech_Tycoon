@@ -150,6 +150,54 @@ func test_customers_step_wander() -> void:
 	await _shutdown(main)
 
 
+func test_player_marker_only_above_the_player() -> void:
+	var main := await _boot_from_fixture()
+	var player: Player = main.player
+	var markers: Array = t.get_tree().root.find_children("*", "PlayerMarker", true, false)
+	t.check_eq(markers.size(), 1, "exactly one player marker in the game")
+	t.check(markers.size() == 1 and markers[0].get_parent() == player, "the marker belongs to the player")
+	for c in _customers(main):
+		t.check(c.find_children("*", "PlayerMarker", true, false).is_empty(), "no marker on customer %d" % c.lead_id)
+	t.check(player.marker.position.y < -235.0, "marker sits above the head (sprite is 235 px tall)")
+	await _wait(0.3)
+	t.check(player.marker.visible and player.marker.modulate.a > 0.9, "visible at the café")
+	await _travel(&"home")
+	await _wait(0.3)
+	t.check(player.marker.visible and player.marker.modulate.a > 0.9, "visible at home")
+	Input.action_press(&"move_left")
+	for i in 20:
+		await t.get_tree().physics_frame
+	t.check(player.velocity.length() > 1.0 and player.marker.visible, "visible while walking")
+	Input.action_release(&"move_left")
+	await _shutdown(main)
+
+
+func test_player_marker_fades_near_interactions() -> void:
+	var main := await _boot_from_fixture()
+	var player: Player = main.player
+	var customers := _customers(main)
+	if customers.is_empty():
+		t.check(false, "no customer to stand next to")
+		await _shutdown(main)
+		return
+	main.player.wander_when_idle = false
+	for c in customers:
+		c.set_physics_process(false)  # keep them still for the test
+	var c: Customer = customers[0]
+	var home_spot := player.global_position
+	await _wait(0.3)
+	t.check(player.current_focus() == null and player.marker.visible, "marker shown at the spawn point, nothing in reach")
+	player.global_position = c.global_position + Vector2(30, 6)
+	await _wait(0.5)
+	t.check(player.current_focus() != null, "a customer is in reach")
+	t.check(player.marker.suppressed and not player.marker.visible, "marker hidden while the [E] badge / bubble area is in use")
+	player.global_position = home_spot
+	await _wait(0.5)
+	t.check(player.current_focus() == null, "back at the spawn point, nothing in reach")
+	t.check(player.marker.visible and player.marker.modulate.a > 0.9, "marker returns when nothing is in reach")
+	await _shutdown(main)
+
+
 # --- Helpers --------------------------------------------------------------------
 
 func _boot_from_fixture() -> Node:
