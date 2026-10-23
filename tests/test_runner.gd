@@ -6,7 +6,7 @@ extends Node
 ## SaveSystem pointed into it; the player's real save is checked to be byte-identical afterwards.
 
 const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd",
-	"res://tests/test_environments.gd"]
+	"res://tests/test_environments.gd", "res://tests/test_responsive.gd"]
 
 var tmp_root := ""
 var _failures: Array[String] = []

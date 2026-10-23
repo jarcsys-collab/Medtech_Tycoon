@@ -135,12 +135,17 @@ func _layout() -> void:
 		return
 	_scale = clampf(area.y / ROI.size.y, MIN_SCALE, MAX_SCALE)
 	_scale = minf(_scale, area.x / ROI.size.x)
+	if ROI.size.y * _scale > area.y + 0.5:
+		# The map will scroll vertically: leave room for the scrollbar so the map still fits the width.
+		var bar := map_scroll.get_v_scroll_bar().get_combined_minimum_size().x
+		_scale = minf(_scale, (area.x - bar) / ROI.size.x)
 	map_canvas.custom_minimum_size = ROI.size * _scale
 	map_image.position = -ROI.position * _scale
 	map_image.size = map_image.texture.get_size() * _scale
 	for loc in GameData.locations:
 		var pin: MapPin = _pins[loc.id]
 		pin.anchor_point = (loc.map_position - ROI.position) * _scale
+		pin.bounds_width = ROI.size.x * _scale
 		pin._reposition()
 
 

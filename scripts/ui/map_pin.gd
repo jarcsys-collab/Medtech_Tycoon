@@ -13,6 +13,10 @@ const GREY := Color("#5d6668")
 var location: LocationData
 ## Pin tip position in the parent (map canvas) coordinates; set by TravelMap.
 var anchor_point := Vector2.ZERO
+## Width of the visible map (0 = no limit; set by TravelMap). A pin near the edge keeps its tip on
+## the spot but slides its name tag inward, so the tag is never cut off by the map frame.
+var bounds_width := 0.0
+var _pin_shift := 0.0
 var _here := false
 var _selected := false
 var _locked := false
@@ -73,11 +77,19 @@ func _process(_delta: float) -> void:
 
 func _reposition() -> void:
 	if location:
-		position = anchor_point - Vector2(size.x / 2.0, size.y)
+		var x := anchor_point.x - size.x / 2.0
+		var inside := x
+		if bounds_width > 0.0 and size.x <= bounds_width:
+			inside = clampf(x, 0.0, bounds_width - size.x)
+		position = Vector2(inside, anchor_point.y - size.y)
+		if not is_equal_approx(_pin_shift, x - inside):
+			_pin_shift = x - inside
+			pin.queue_redraw()
 
 
 func _draw_pin() -> void:
 	var s := pin.size
+	var shift := Vector2(_pin_shift, 0.0)
 	var r := minf(s.x, s.y) * 0.42
 	var c := Vector2(s.x / 2.0, r + 2.0)
 	var fill := MINT if _here else (GREY if _locked else RED)
@@ -87,9 +99,9 @@ func _draw_pin() -> void:
 		var ph := fmod(Time.get_ticks_msec() / 1300.0, 1.0)
 		for offset in [0.0, 0.5]:
 			var p := fmod(ph + offset, 1.0)
-			pin.draw_set_transform(Vector2(s.x / 2.0, s.y * 1.18), 0.0, Vector2(1.0, 0.45))
+			pin.draw_set_transform(shift + Vector2(s.x / 2.0, s.y * 1.18), 0.0, Vector2(1.0, 0.45))
 			pin.draw_arc(Vector2.ZERO, 34.0 * (0.4 + p * 1.1), 0.0, TAU, 40, Color(MINT, 1.0 - p), 3.0)
-		pin.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	pin.draw_set_transform(shift, 0.0, Vector2.ONE)
 	var tip := Vector2(s.x / 2.0, s.y)
 	var poly := PackedVector2Array([c + Vector2(-r * 0.75, r * 0.65), tip, c + Vector2(r * 0.75, r * 0.65)])
 	pin.draw_colored_polygon(poly, border)
