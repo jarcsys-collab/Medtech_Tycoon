@@ -16,6 +16,8 @@ const GOLD := Color("#e8c25a")
 @onready var icon: TextureRect = %Icon
 @onready var title: Label = %Title
 @onready var content: VBoxContainer = %Content
+## Stays below the scrolling list, so its buttons (REPLAY) are never scrolled out of sight.
+@onready var footer: HBoxContainer = %Footer
 @onready var close_button: Button = %CloseButton
 
 var mode: StringName = &""
@@ -67,6 +69,8 @@ func refresh() -> void:
 	title.text = MODES[mode][0]
 	icon.texture = MODES[mode][1]
 	UIFactory.clear(content)
+	UIFactory.clear(footer)
+	footer.hide()
 	match mode:
 		&"tasks": _build_tasks()
 		&"deals": _build_deals()
@@ -93,8 +97,10 @@ func _build_tasks() -> void:
 		content.add_child(parts[0])
 	# Medtycoonv2: replay the guided tutorial from TASKS.
 	var replay := UIFactory.button("Replay tutorial" if not Tutorial.is_active() else "Restart tutorial (step %s)" % Tutorial.index_label(), _replay_tutorial)
+	replay.name = "ReplayButton"
 	replay.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	content.add_child(replay)
+	footer.add_child(replay)
+	footer.show()
 
 
 func _replay_tutorial() -> void:

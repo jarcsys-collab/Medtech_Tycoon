@@ -39,7 +39,7 @@ var _layout_queued := false
 
 
 func _ready() -> void:
-	get_window().min_size = MIN_WINDOW
+	get_window().min_size = min_window_size(OS.has_feature("web"))
 	player = PLAYER_SCENE.instantiate()
 	player.interactable_changed.connect(hud.set_prompt)
 	player.interactable_changed.connect(marker.follow)
@@ -76,6 +76,12 @@ func _ready() -> void:
 	if SaveSystem.last_error != "":
 		UIEvents.toast(SaveSystem.load_failure_message())
 	fader.fade_to(0.0, 0.5)
+
+
+## Desktop builds only. On the web the canvas follows the browser; a minimum size there makes
+## Godot lay out for a wider window than a phone shows, so the right edge is cut off.
+static func min_window_size(web: bool) -> Vector2i:
+	return Vector2i.ZERO if web else MIN_WINDOW
 
 
 func _unhandled_input(event: InputEvent) -> void:

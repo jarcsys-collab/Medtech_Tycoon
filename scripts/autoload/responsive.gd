@@ -40,19 +40,24 @@ func update_responsive_layout() -> void:
 	var px := Vector2(win.size)
 	if px.x <= 0.0 or px.y <= 0.0:
 		return
-	var css := px / maxf(DisplayServer.screen_get_scale(), 1.0)
-	var new_mode := Mode.DESKTOP
-	var base := _desktop_base
-	if css.y > css.x:
-		new_mode = Mode.MOBILE_PORTRAIT
-		var ui_scale := TABLET_UI_SCALE if css.x >= TABLET_WIDTH else 1.0
-		var w := roundi(maxf(css.x / ui_scale, PORTRAIT_MIN_WIDTH))
-		base = Vector2i(w, w)  # "expand" aspect: width is fixed, the height grows to fill the screen
-	elif css.y < MOBILE_LANDSCAPE_MAX_HEIGHT:
-		new_mode = Mode.MOBILE_LANDSCAPE
-		base = LANDSCAPE_BASE
+	var layout := layout_for(px, DisplayServer.screen_get_scale(), _desktop_base)
+	var new_mode: Mode = layout[0]
+	var base: Vector2i = layout[1]
 	if win.content_scale_size != base:
 		win.content_scale_size = base
 	if new_mode != mode:
 		mode = new_mode
 		layout_changed.emit(mode)
+
+
+## [Mode, UI base size] for a window of `px` physical pixels at `screen_scale` (devicePixelRatio).
+static func layout_for(px: Vector2, screen_scale: float, desktop_base: Vector2i) -> Array:
+	var css := px / maxf(screen_scale, 1.0)
+	if css.y > css.x:
+		var ui_scale := TABLET_UI_SCALE if css.x >= TABLET_WIDTH else 1.0
+		var w := roundi(maxf(css.x / ui_scale, PORTRAIT_MIN_WIDTH))
+		# "expand" aspect: width is fixed, the height grows to fill the screen
+		return [Mode.MOBILE_PORTRAIT, Vector2i(w, w)]
+	if css.y < MOBILE_LANDSCAPE_MAX_HEIGHT:
+		return [Mode.MOBILE_LANDSCAPE, LANDSCAPE_BASE]
+	return [Mode.DESKTOP, desktop_base]
