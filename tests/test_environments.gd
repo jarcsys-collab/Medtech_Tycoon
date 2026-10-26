@@ -225,8 +225,13 @@ static func _pin_positions(map: TravelMap) -> Dictionary:
 	return out
 
 
+## Café prospects only (G2a background patrons have nothing to sell).
 static func _customers(main: Node) -> Array:
-	return main.current_location.find_children("*", "Customer", true, false)
+	return main.current_location.find_children("*", "Customer", true, false).filter(_is_prospect)
+
+
+static func _is_prospect(c: Customer) -> bool:
+	return not c.patron
 
 
 func _shutdown(main: Node) -> void:

@@ -1,6 +1,8 @@
 class_name Player
 extends CharacterBody2D
-## Top-down player: WASD/arrows movement, E to interact, optional idle auto-wander (Medtycoonv1 "wander").
+## Top-down player. Tap-first (Sales Simulator handoff): tap the floor to walk there, tap a person
+## or object to walk up and select it, then use the HUD's action button. Optional on desktop:
+## WASD/arrows to walk and E to use. Idle auto-wander (Medtycoonv1 "wander").
 
 signal interactable_changed(target: Interactable)
 ## Medtycoonv2: fires each time the player has walked MOVED_EVENT_DISTANCE px with the keys (tutorial "moved").
@@ -43,6 +45,10 @@ var _keyed_distance := 0.0
 var _tap_active := false
 var _tap_target: Interactable
 var _tap_stuck := 0.0
+## Tapped object, kept as the focus while it is in reach (the action button acts on it).
+var _selected: Interactable
+## Object told to wait for the player (customers): the tap target, then the selection.
+var _engaged: Interactable
 
 
 func _ready() -> void:
@@ -81,12 +87,15 @@ func _physics_process(delta: float) -> void:
 	if keyed or not input_enabled:
 		_cancel_tap()
 	if keyed:
+		_selected = null
+	if keyed:
 		velocity = input.normalized() * walk_speed
 		_wander.hold(idle_before_wander)
 	elif _tap_active:
 		velocity = _tap_velocity()
 		_wander.hold(idle_before_wander)
-	elif wander_when_idle and input_enabled:
+	elif wander_when_idle and input_enabled and _selected == null:
+		# A tapped object keeps the player beside it until it is used or something else is tapped.
 		var speed := wander_step_speed if wander_style == WanderBrain.Style.STEPS else wander_speed
 		velocity = _wander.get_velocity(self, delta, speed)
 	else:
@@ -105,6 +114,7 @@ func _physics_process(delta: float) -> void:
 			moved_enough.emit()
 	_update_animation(keyed)
 	_update_focus()
+	_update_engaged()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -122,6 +132,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _use(target: Interactable) -> void:
 	_cancel_tap()
+	# Talking to a customer (button or E) selects them, so they wait through the conversation.
+	if target.get_parent().has_method(&"wait_for_player"):
+		_selected = target
 	_wander.hold(idle_before_wander)
 	_bounce()
 	target.interact(self)
@@ -129,9 +142,10 @@ func _use(target: Interactable) -> void:
 
 # --- Tap / click to move ----------------------------------------------------------
 
-## Walk to a world point. If the tap lands on an object (customer, shelf, bed), walk to it and
-## use it on arrival, exactly like pressing E next to it.
+## Walk to a world point. If the tap lands on an object (customer, shelf, bed), walk up to it and
+## select it: the HUD then shows its action button (the handoff's "tap a person, then the action").
 func tap_at(point: Vector2) -> void:
+	_selected = null
 	_tap_target = _pick_interactable(point)
 	_tap_active = true
 	_tap_stuck = 0.0
@@ -149,7 +163,7 @@ func _tap_velocity() -> Vector2:
 		return Vector2.ZERO
 	if _tap_target:
 		if _tap_in_reach():
-			_use(_tap_target)
+			_select_tapped()
 			return Vector2.ZERO
 		# Customers move: keep the path pointed at them (re-path only after they drift a bit).
 		if nav_agent.target_position.distance_to(_tap_target.global_position) > 16.0:
@@ -170,9 +184,32 @@ func _tap_report_motion(moved: float, expected: float, delta: float) -> void:
 
 func _tap_arrived() -> void:
 	if _tap_target and _tap_in_reach():
-		_use(_tap_target)
+		_select_tapped()
 	else:
 		_cancel_tap()
+
+
+func _select_tapped() -> void:
+	_selected = _tap_target
+	_cancel_tap()
+	_wander.hold(idle_before_wander)
+
+
+## A tapped or selected customer waits for the player (no timeout) instead of wandering out of
+## reach; it is released when the player taps elsewhere, walks off with the keys, or it leaves.
+func _update_engaged() -> void:
+	var want: Interactable = _tap_target if is_instance_valid(_tap_target) else _selected
+	if not is_instance_valid(want):
+		want = null
+	if not is_instance_valid(_engaged):
+		_engaged = null
+	if want == _engaged:
+		return
+	if _engaged and _engaged.get_parent().has_method(&"wait_for_player"):
+		_engaged.get_parent().wait_for_player(false)
+	_engaged = want
+	if _engaged and _engaged.get_parent().has_method(&"wait_for_player"):
+		_engaged.get_parent().wait_for_player(true)
 
 
 func _tap_in_reach() -> bool:
@@ -239,8 +276,13 @@ func _update_animation(keyed: bool) -> void:
 func _update_focus() -> void:
 	var best: Interactable = null
 	var best_d := INF
-	if input_enabled:
-		for area in interaction_area.get_overlapping_areas():
+	var in_reach := interaction_area.get_overlapping_areas()
+	if not (is_instance_valid(_selected) and _selected.can_interact() and in_reach.has(_selected)):
+		_selected = null
+	if input_enabled and _selected:
+		best = _selected
+	elif input_enabled:
+		for area in in_reach:
 			if area is Interactable and area.can_interact():
 				var d := global_position.distance_squared_to(area.global_position)
 				if d < best_d:

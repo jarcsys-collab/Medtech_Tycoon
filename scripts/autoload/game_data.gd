@@ -12,11 +12,11 @@ const LEVEL_XP: Array[int] = [0, 100, 250, 450, 700]
 const TASKS := [
 	{"id": "open_phone", "title": "Check your phone", "desc": "Open the Sales Phone to review your leads.", "xp": 10},
 	{"id": "visit_cafe", "title": "Go to Coffee Corner", "desc": "Use TRAVEL to visit the café on Market St.", "xp": 10},
-	{"id": "meet_prospect", "title": "Meet a prospect", "desc": "Walk up to a café customer and press E.", "xp": 10},
-	{"id": "first_deal", "title": "Close your first deal", "desc": "Sell to a lead in person (E) or by phone.", "xp": 20},
+	{"id": "meet_prospect", "title": "Meet a prospect", "desc": "Tap a café customer, then the action button.", "xp": 10},
+	{"id": "first_deal", "title": "Close your first deal", "desc": "Sell to a lead in person or by phone.", "xp": 20},
 	{"id": "reach_lv2", "title": "Reach Level 2", "desc": "Earn XP from deals. Unlocks the Supplier Depot.", "xp": 0},
 	{"id": "restock", "title": "Restock inventory", "desc": "Buy stock from a shelf at the Supplier Depot.", "xp": 15},
-	{"id": "sleep", "title": "End the day", "desc": "Go Home and press E at your bed to sleep.", "xp": 10},
+	{"id": "sleep", "title": "End the day", "desc": "Go Home, tap your bed and choose Sleep.", "xp": 10},
 ]
 
 const FIRST_NAMES := ["Maria", "Jun", "Aisha", "Tomas", "Grace", "Ravi", "Elena", "Marcus", "Noor", "Ben", "Lea", "Kenji"]

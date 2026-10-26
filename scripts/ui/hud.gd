@@ -1,13 +1,23 @@
 class_name Hud
 extends Control
 ## Always-on HUD (anchored, scales with the 1280x720 canvas_items base):
-## top stat bar, objective card, right nav rail, toast, interaction prompt, tutorial card.
+## top bar, objective card, right nav rail, toast, contextual action button, tutorial card.
+## Sales Simulator handoff (B1): the top bar shows the date and time of day only (cash, reputation
+## and leads stay in GameState and appear in FINANCE and the phone); TO-DO and PHONE lead the nav.
 
 signal nav_selected(id: StringName)
 ## Portrait layout only: the task / tutorial cards changed size or visibility.
 signal portrait_insets_changed
 
 const TOAST_SECONDS := 2.6  # Medtycoonv1 toast timeout
+## Time-of-day indicator (G2a): the clock's caption names the slot, in the slot's colour.
+const SLOT_LABELS := {&"morning": "MORNING", &"afternoon": "AFTERNOON", &"evening": "EVENING"}
+const SLOT_COLORS := {&"morning": Color("#f2b866"), &"afternoon": Color("#ffd27a"), &"evening": Color("#b9a3ff")}
+const SLOT_NOTICES := {
+	&"morning": "Morning: commuters drop by the café",
+	&"afternoon": "Afternoon rush: the café is busiest now",
+	&"evening": "Evening: the café is quieter now",
+}
 const NAV_BUTTON_SCENE := preload("res://scenes/ui/nav_button.tscn")
 const TASK_ICON := preload("res://assets/ui/tasks.png")
 
@@ -65,20 +75,22 @@ const MOBILE_NAV_HEIGHT := 60.0
 ## Extra room for the notch / status bar (top) and the home indicator / browser bar (bottom).
 const SAFE_TOP := 4.0
 const SAFE_BOTTOM := 8.0
-## Nav items that move into the MORE sheet on portrait phones.
-const MOBILE_SECONDARY: Array[StringName] = [&"deals", &"finance"]
+## Nav items that move into the MORE sheet on portrait phones (TO-DO, PHONE, TRAVEL stay in the bar).
+const MOBILE_SECONDARY: Array[StringName] = [&"inventory", &"deals", &"finance"]
 
 ## True while the portrait phone layout is applied (see apply_layout / Responsive autoload).
 var portrait := false
 ## Mobile layouts (portrait or landscape): collapsed objective bar, overlays hide the extras.
 var compact := false
-## Touch screens: a large contextual action button replaces the "[E] Sleep" key prompt.
+## Touchscreen device: no keyboard hints. The contextual action button is shown on every platform;
+## keyboard devices also get the floating [E] badge (InteractionMarker) and key hints as shortcuts.
 var touch_ui := false
 var _scene_row_order: Array[Node] = []
 var _mobile_rows: VBoxContainer
 var _mobile_spacer: Control
 
 var _toast_timer: SceneTreeTimer
+var _toast_shown_ms := -100000
 var _map_mode := false
 var _xp_tween: Tween
 var _objective_id := ""
@@ -117,6 +129,7 @@ func _ready() -> void:
 	GameState.stats_changed.connect(refresh)
 	GameState.leads_changed.connect(refresh)
 	GameState.tasks_changed.connect(refresh)
+	GameState.time_slot_changed.connect(_on_time_slot_changed)
 	toast_panel.hide()
 	prompt_panel.hide()
 	refresh()
@@ -127,6 +140,9 @@ func refresh() -> void:
 	day_block.caption = "DAY %d" % GameState.day
 	day_block.value = ("Day %d · " % GameState.day if portrait else "") + GameState.date_label()
 	clock_block.value = GameState.time_label()
+	var slot := GameState.time_slot()
+	clock_block.caption = SLOT_LABELS[slot]
+	clock_block.get_node("Text/Caption").add_theme_color_override(&"font_color", SLOT_COLORS[slot])
 	cash_block.value = "$" + GameState.format_money(GameState.cash)
 	rep_block.value = "%d%%" % GameState.reputation
 	leads_block.value = str(GameState.leads.size())
@@ -178,35 +194,56 @@ func set_prompt(target: Interactable) -> void:
 	_update_interact()
 
 
+## Tap-first: whatever is in reach (or was tapped) gets the big action button, on every platform.
 func _update_interact() -> void:
 	var target: Interactable = _prompt_target if is_instance_valid(_prompt_target) else null
-	if touch_ui:
-		prompt_panel.hide()
-		if target != null and not (compact and _active_nav != &""):
-			_interact_button.text = target.get_prompt()
-			if not _interact_button.visible or _interact_button.modulate.a < 1.0:
-				UIAnim.pop_in(_interact_button, _interact_button, 0.9)
-		else:
-			UIAnim.fade_out(_interact_button)
-		return
-	_interact_button.hide()
-	if target == null:
-		UIAnim.fade_out(prompt_panel)
-		return
-	prompt_label.text = target.get_prompt()
-	if not prompt_panel.visible or prompt_panel.modulate.a < 1.0:
-		UIAnim.pop_in(prompt_panel, prompt_panel, 0.9)
+	prompt_panel.hide()  # the old "[E] Sleep" key prompt; the button and the [E] badge replace it
+	# Hidden while a menu covers the room (mobile) or the MORE sheet is open (it sits in the same corner).
+	if target != null and not (compact and _active_nav != &"") and not _more_sheet.visible:
+		_interact_button.text = target.get_prompt()
+		_interact_button.tooltip_text = "" if touch_ui else "Or press E"
+		if not _interact_button.visible or _interact_button.modulate.a < 1.0:
+			UIAnim.pop_in(_interact_button, _interact_button, 0.9)
+	else:
+		UIAnim.fade_out(_interact_button)
 
 
 func show_toast(text: String) -> void:
+	_toast_shown_ms = Time.get_ticks_msec()
 	toast_label.text = text
-	toast_panel.reset_size()
+	_fit_toast()
 	UIAnim.pop_in(toast_panel, toast_panel, 0.9)
 	_toast_timer = get_tree().create_timer(TOAST_SECONDS)
 	var my_timer := _toast_timer
 	my_timer.timeout.connect(func():
 		if _toast_timer == my_timer:
 			UIAnim.fade_out(toast_panel))
+
+
+## The clock passed 12:30 PM / 4:30 PM: pulse the clock and add a short notice. Deferred, so a
+## toast from the same action ("Arrived at ...") is shown first and the notice joins it.
+func _on_time_slot_changed(slot: StringName, announce: bool) -> void:
+	refresh()
+	if announce:
+		UIAnim.pulse(clock_block, 1.12)
+		_show_slot_notice.call_deferred(SLOT_NOTICES[slot])
+
+
+## Shrink the toast to its text. Portrait keeps the full-width band and only fits the height.
+func _fit_toast() -> void:
+	if portrait:
+		toast_panel.offset_bottom = toast_panel.offset_top
+	else:
+		toast_panel.reset_size()
+
+
+func _show_slot_notice(text: String) -> void:
+	if toast_panel.visible and Time.get_ticks_msec() - _toast_shown_ms < 1000 and not text in toast_label.text:
+		toast_label.text += "
+" + text
+		_fit_toast()
+	else:
+		show_toast(text)
 
 
 func _refresh_objective() -> void:
@@ -247,7 +284,7 @@ func _refresh_tutorial() -> void:
 	_tutorial_shown = true
 	tip_title.text = step.title
 	tip_body.text = step.body
-	hint_label.text = step.get("hint", "")
+	hint_label.text = step.get("hint", "") if touch_ui else step.get("hint_keys", step.get("hint", ""))
 	hint_sub.text = step.get("sub", "")
 	step_count.text = Tutorial.index_label()
 	var wants_click: bool = step.wait == "click"
@@ -304,7 +341,8 @@ func _on_tutorial_input(event: InputEvent) -> void:
 func apply_layout(portrait_mode: bool) -> void:
 	portrait = portrait_mode
 	compact = Responsive.mode != Responsive.Mode.DESKTOP
-	touch_ui = compact or DisplayServer.is_touchscreen_available()
+	# Keyboard hints depend on the device, not the layout (a short desktop window keeps them).
+	touch_ui = DisplayServer.is_touchscreen_available()
 	# Portrait -> portrait (e.g. phone -> tablet width) re-applies on top; anything else starts
 	# from the scene layout. (Round-tripping through desktop leaves stale minimum sizes.)
 	if not (portrait and _mobile_rows != null and _mobile_rows.visible):
@@ -349,6 +387,8 @@ func apply_mobile_portrait_layout() -> void:
 		_swap(block.get_node("Text/Caption"), {"visible": false})
 		_swap(block.get_node("Text/Value"), {"theme_override_font_sizes/font_size": 15})
 		_swap(block.get_node("Icon"), {"custom_minimum_size": Vector2(18, 18)})
+	# The time-of-day caption stays (small) above the clock.
+	_swap(clock_block.get_node("Text/Caption"), {"visible": true, "theme_override_font_sizes/font_size": 10})
 	for block in [clock_block, cash_block, rep_block, leads_block]:
 		_swap(block, {"size_flags_horizontal": Control.SIZE_EXPAND_FILL})
 	_swap(level_box, {"custom_minimum_size": Vector2(118, 0), "theme_override_constants/separation": 2})
@@ -358,7 +398,10 @@ func apply_mobile_portrait_layout() -> void:
 	var below_bar := m + SAFE_TOP + top_bar.get_combined_minimum_size().y + 4.0
 	_swap(objective, {"anchor_left": 0.0, "anchor_right": 1.0,
 		"offset_left": m, "offset_top": below_bar, "offset_right": -m, "offset_bottom": below_bar})
-	_swap(toast_panel, {"offset_top": below_bar + 2.0, "offset_bottom": below_bar + 38.0})
+	# Toast: full width with wrapping, so long or two-line notices never run off a narrow screen.
+	_swap(toast_panel, {"anchor_left": 0.0, "anchor_right": 1.0, "offset_left": m + 8.0, "offset_right": -m - 8.0,
+		"offset_top": below_bar + 2.0, "offset_bottom": below_bar + 38.0})
+	_swap(toast_label, {"autowrap_mode": TextServer.AUTOWRAP_WORD_SMART, "custom_minimum_size": Vector2(10, 0)})
 	# Side rail -> bottom bar (same NavButtons, same signals); DEALS / FINANCE move into MORE.
 	var nav_bottom := m + SAFE_BOTTOM
 	_swap(nav_list, {"theme_override_constants/separation": 4})
@@ -421,7 +464,8 @@ func _swap(c: Control, values: Dictionary) -> void:
 	LayoutSwap.apply(c, values)
 
 
-## Portrait: split the single stat row into two rows (date + level, then time/cash/reputation/leads).
+## Portrait: split the single stat row into two rows (date + level, then time; cash, reputation
+## and leads ride along hidden).
 ## The stat nodes are moved, not duplicated, so every existing reference keeps working.
 func _set_stat_rows(two_rows: bool) -> void:
 	if _scene_row_order.is_empty():
@@ -532,7 +576,7 @@ func _build_mobile_controls() -> void:
 	add_child(_more_sheet)
 	_more_sheet.hide()
 
-	# Large contextual action button (touch): same "interact" action as the E key.
+	# Large contextual action button (every platform): same "interact" action as the E key.
 	_interact_button = Button.new()
 	_interact_button.name = "InteractButton"
 	_interact_button.theme_type_variation = &"PrimaryButton"
@@ -603,6 +647,7 @@ func _set_more_open(open: bool) -> void:
 		return
 	_more_sheet.visible = open and _more_button.visible
 	_update_more_button()
+	_update_interact()
 
 
 func _update_more_button() -> void:

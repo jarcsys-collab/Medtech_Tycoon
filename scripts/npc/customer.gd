@@ -2,8 +2,11 @@ class_name Customer
 extends CharacterBody2D
 ## Café prospect. E to introduce yourself (becomes a lead), E again to close the deal in person.
 ## Bubble: "?" = not met yet, "$" = lead you can fulfil now, "..." = lead but not enough stock.
+## A patron (G2a) is a background guest: no bubble, nothing to talk about, not a prospect.
 
 const TINT_SOFTEN := 0.7
+## Seconds a customer stays put after the player lets them go (see wait_for_player).
+const RELEASE_PAUSE := 1.5
 
 @export var walk_speed := 60.0          # leaving, and CONTINUOUS wandering
 ## STEPS = short strides with pauses (Sales Simulator v3); CONTINUOUS = the original V1 wander.
@@ -11,6 +14,8 @@ const TINT_SOFTEN := 0.7
 @export var wander_step_speed := 26.0
 
 var lead_id := -1
+## Background guest (see setup_patron); lead_id stays -1.
+var patron := false
 var _wander: WanderBrain
 var _leaving := false
 var _exit := Vector2.ZERO
@@ -46,6 +51,30 @@ func setup(prospect_id: int, spots: Array[Vector2], exit_point: Vector2) -> void
 	_refresh()
 
 
+## Background guest with a random look. Leaves by itself after `stay` seconds (0 = stays).
+func setup_patron(spots: Array[Vector2], exit_point: Vector2, stay := 0.0) -> void:
+	patron = true
+	_exit = exit_point
+	_wander.spots = spots
+	talk.enabled = false
+	bubble.hide()
+	set_process(false)
+	sprite.modulate = Color.from_hsv(randf(), randf_range(0.35, 0.6), randf_range(0.85, 1.0)).lerp(Color.WHITE, TINT_SOFTEN)
+	if stay > 0.0:
+		get_tree().create_timer(stay).timeout.connect(leave)
+
+
+## The player is engaged with this customer (walking over after a tap, selected, or talking):
+## stand still until released, then pause briefly before wandering again.
+func wait_for_player(waiting := true) -> void:
+	_wander.hold(INF if waiting else RELEASE_PAUSE)
+
+
+## Café pace for the time of day: multiplies the pause between wander trips.
+func set_pace(rest_scale: float) -> void:
+	_wander.rest_scale = rest_scale
+
+
 func _process(_delta: float) -> void:
 	# Gentle bob so the status bubble reads as "something to do here".
 	bubble.position.y = -292.0 + sin(Time.get_ticks_msec() / 320.0 + lead_id) * 4.0
@@ -78,6 +107,10 @@ func _physics_process(delta: float) -> void:
 		sprite.play(anim)
 
 
+func is_leaving() -> bool:
+	return _leaving
+
+
 func leave() -> void:
 	if _leaving:
 		return
@@ -99,7 +132,7 @@ func _fade_out() -> void:
 
 
 func _refresh() -> void:
-	if _leaving or not is_inside_tree():
+	if _leaving or patron or not is_inside_tree():
 		return
 	var p := GameState.find_prospect(lead_id)
 	if p.is_empty() or p.get("sold", false):
@@ -122,7 +155,7 @@ func _refresh() -> void:
 
 
 func _on_talk(_player: Node) -> void:
-	_wander.hold(6.0)
+	# The player selects whoever they talk to, so this customer waits (see wait_for_player).
 	var p := GameState.find_prospect(lead_id)
 	if p.is_empty():
 		return

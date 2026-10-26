@@ -84,24 +84,28 @@ func test_portrait_controls_reachable_and_clickable() -> void:
 		main._close_overlays()
 		Tutorial.restart()
 		await _settle()
-		# Five bottom-bar controls: each one opens (or toggles) its menu.
-		for id in [&"tasks", &"phone", &"travel", &"inventory"]:
+		# Bottom bar (handoff B1): TO-DO, PHONE, TRAVEL and MORE; each opens (or toggles) its menu.
+		var bar: Array = hud.nav_list.get_children().filter(func(b): return b.visible)
+		t.check_eq(bar.map(func(b): return String(b.name)), ["Tasks", "Phone", "Travel", "More"], at + "bar order")
+		for id in [&"tasks", &"phone", &"travel"]:
 			await _click(hud.nav_list.get_node(String(id).capitalize()), at + String(id))
 			await _settle()
 			t.check_eq(main.active, id, at + "%s tab opens its menu" % id)
 			main._close_overlays()
 			await _settle()
-		await _click(hud._more_button, at + "MORE")
-		await _settle()
-		t.check(hud._more_sheet.visible, at + "MORE opens its sheet")
-		for b: NavButton in hud._more_list.get_children():
-			_check_on_screen(b, at + "MORE sheet " + b.label)
-		await _click(hud._more_list.get_node("Finance"), at + "MORE > FINANCE")
-		await _settle()
-		t.check_eq(main.active, &"finance", at + "FINANCE opens from the MORE sheet")
-		await _click(main.info_panel.close_button, at + "panel close X")
-		await _settle()
-		t.check_eq(main.active, &"", at + "close X closes the panel")
+		# Everything else stays one tap away in the MORE sheet.
+		for id in [&"inventory", &"deals", &"finance"]:
+			await _click(hud._more_button, at + "MORE")
+			await _settle()
+			t.check(hud._more_sheet.visible, at + "MORE opens its sheet")
+			for b: NavButton in hud._more_list.get_children():
+				_check_on_screen(b, at + "MORE sheet " + b.label)
+			await _click(hud._more_list.get_node(String(id).capitalize()), at + "MORE > " + String(id))
+			await _settle()
+			t.check_eq(main.active, id, at + "%s opens from the MORE sheet" % id)
+			await _click(main.info_panel.close_button, at + "panel close X")
+			await _settle()
+			t.check_eq(main.active, &"", at + "close X closes the panel")
 		# Sales Phone: open a page, then back.
 		main.select(&"phone")
 		await _settle()

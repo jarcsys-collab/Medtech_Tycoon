@@ -20,13 +20,23 @@ signal leads_added(count: int)
 signal stock_purchased(product_id: String, qty: int)
 signal deal_closed(amount: int, in_person: bool)
 signal task_completed(task_id: String)
+## Morning -> afternoon -> evening as the clock advances (G2a); also on a new day / load.
+## `announce` is true only when the clock passed a boundary during play (shows a notice).
+signal time_slot_changed(slot: StringName, announce: bool)
 
 const START_CASH := 10000          # Medtycoonv1: cash: 10000
 const START_MINUTES := 8 * 60 + 30 # Medtycoonv1: minutes: 510 (08:30 AM)
 const LATE_MINUTES := 22 * 60
-## Time-of-day boundaries for visuals (Sales Simulator v3 slots). Derived from `minutes`; not saved.
+## Time-of-day boundaries (Sales Simulator v3 slots). Derived from `minutes`; not saved.
 const AFTERNOON_START := 12 * 60 + 30   # 12:30 PM
 const EVENING_START := 16 * 60 + 30     # 4:30 PM
+## Café ambience by time of day (G2a). patrons = background guests: visual only, nothing to sell,
+## never prospects; rest = customers' pause length (x the step-wander rest). Sales are unaffected.
+const CROWD := {
+	&"morning": {"patrons": 1, "rest": 0.6, "commuters": true},
+	&"afternoon": {"patrons": 2, "rest": 1.0, "commuters": false},
+	&"evening": {"patrons": 0, "rest": 1.8, "commuters": false},
+}
 const STARTING_LEADS := 5          # Medtycoonv1 HUD: LEADS 5
 const DAILY_NEW_LEADS := 2
 const CAFE_PROSPECTS := 3
@@ -104,6 +114,7 @@ func sleep() -> void:
 	complete_task("sleep")
 	UIEvents.toast("Day %d begins. +%d new leads" % [day, DAILY_NEW_LEADS])
 	_emit_all()
+	time_slot_changed.emit(time_slot(), false)
 	SaveSystem.save_game()
 
 
@@ -111,10 +122,14 @@ func sleep() -> void:
 
 func advance_time(mins: int) -> void:
 	var was_late := minutes >= LATE_MINUTES
+	var old_slot := time_slot()
 	minutes += mins
 	if not was_late and minutes >= LATE_MINUTES:
 		UIEvents.toast("It's getting late. Head home and sleep.")
+	var slot := time_slot()
 	stats_changed.emit()
+	if slot != old_slot:
+		time_slot_changed.emit(slot, true)
 
 
 func time_label() -> String:
@@ -123,7 +138,7 @@ func time_label() -> String:
 	return "%02d:%02d %s" % [h12, minutes % 60, "AM" if h < 12 else "PM"]
 
 
-## &"morning" before 12:30 PM, &"afternoon" until 4:30 PM, &"evening" after. Visuals only.
+## &"morning" before 12:30 PM, &"afternoon" until 4:30 PM, &"evening" after.
 func time_slot() -> StringName:
 	if minutes >= EVENING_START:
 		return &"evening"
@@ -134,6 +149,10 @@ func time_slot() -> StringName:
 
 func is_evening() -> bool:
 	return time_slot() == &"evening"
+
+
+func crowd() -> Dictionary:
+	return CROWD[time_slot()]
 
 
 func date_label() -> String:
