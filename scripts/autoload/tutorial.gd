@@ -5,7 +5,8 @@ extends Node
 ##
 ## Step keys:
 ##   title, body  -> tutorial card (keep body <= 90 chars)
-##   hint, sub    -> hint line under the body
+##   hint, sub    -> hint line under the body (tap-first wording)
+##   hint_keys    -> optional hint shown instead on keyboard devices (desktop shortcuts)
 ##   wait         -> event that completes the step ("click" = player clicks the card)
 ##   also         -> optional second event that also completes the step
 ##   highlight    -> side-nav id ("phone", "travel", "inventory") or "phone:<row>" to pulse
@@ -18,32 +19,32 @@ signal step_changed(step: Dictionary)
 signal step_completed(final: bool)
 
 const STEPS := [
-	{"id": "welcome", "title": "Start at Home", "body": "You sell medical diagnostics. Click here to begin your first day.",
-		"hint": "Click to continue", "sub": "The arrow means this box is waiting for you.", "wait": "click"},
-	{"id": "move", "title": "Move Around", "body": "Use WASD or the arrow keys to walk around your apartment.",
-		"hint": "WASD / Arrows", "sub": "He wanders on his own when you let go.", "wait": "moved"},
-	{"id": "phone", "title": "Check Your Phone", "body": "Click PHONE on the right (or press P). It's your sales hub.",
-		"hint": "Phone = Main Navigation", "sub": "Manage your sales activities from your phone.", "wait": "phone_opened", "highlight": "phone"},
-	{"id": "leads", "title": "Open Leads", "body": "Click Leads to see who is ready to buy today.",
+	{"id": "welcome", "title": "Start at Home", "body": "You sell medical diagnostics. Tap here to begin your first day.",
+		"hint": "Tap to continue", "hint_keys": "Click to continue", "sub": "The arrow means this box is waiting for you.", "wait": "click"},
+	{"id": "move", "title": "Move Around", "body": "Tap the floor to walk around your apartment.",
+		"hint": "Tap to walk", "hint_keys": "Click to walk, or WASD / Arrows", "sub": "He wanders on his own when you let go.", "wait": "moved"},
+	{"id": "phone", "title": "Check Your Phone", "body": "Tap PHONE. It's your sales hub.",
+		"hint": "Phone = Main Navigation", "hint_keys": "Phone = Main Navigation (P)", "sub": "Manage your sales activities from your phone.", "wait": "phone_opened", "highlight": "phone"},
+	{"id": "leads", "title": "Open Leads", "body": "Tap Leads to see who is ready to buy today.",
 		"hint": "Leads", "sub": "Call & close a lead when you have the stock.", "wait": "leads_opened", "highlight": "phone:leads"},
 	{"id": "clients", "title": "Find New Clients", "body": "More clients wait at Coffee Corner. Customers marked ? are new prospects.",
 		"hint": "Meet clients in person", "sub": "In-person deals pay 15% more.", "wait": "click"},
-	{"id": "travel", "title": "Travel", "body": "Click TRAVEL (or press M), pick Coffee Corner, then press TRAVEL.",
-		"hint": "Trips cost time + fare", "sub": "Locked pins open as you level up.", "wait": "arrived_coffee", "highlight": "travel"},
-	{"id": "talk", "title": "Meet the Client", "body": "Walk up to a customer marked ? and press E.",
-		"hint": "E / Space = Interact", "sub": "Get close until the prompt appears.", "wait": "sale_opened"},
-	{"id": "sell", "title": "Close the Deal", "body": "Introduce yourself, then press E again and close the deal.",
+	{"id": "travel", "title": "Travel", "body": "Tap TRAVEL, pick Coffee Corner, then tap TRAVEL.",
+		"hint": "Trips cost time + fare", "hint_keys": "Trips cost time + fare (M opens the map)", "sub": "Locked pins open as you level up.", "wait": "arrived_coffee", "highlight": "travel"},
+	{"id": "talk", "title": "Meet the Client", "body": "Tap a customer marked ?, then tap the action button.",
+		"hint": "Tap, then the button", "hint_keys": "Click, then the button (or E)", "sub": "The button shows what you can do.", "wait": "sale_opened"},
+	{"id": "sell", "title": "Close the Deal", "body": "Introduce yourself, then use the button again and close the deal.",
 		"hint": "$ = Ready to buy", "sub": "You can also close leads by phone.", "wait": "sale_won"},
-	{"id": "inventory", "title": "Check Stock", "body": "Each sale uses stock. Click INVENTORY to see what is left.",
+	{"id": "inventory", "title": "Check Stock", "body": "Each sale uses stock. Open INVENTORY to see what is left.",
 		"hint": "Inventory", "sub": "No stock, no sale.", "wait": "inventory_opened", "highlight": "inventory"},
 	{"id": "restock", "title": "Restock", "body": "Buy stock from a shelf at the Supplier Depot. It opens at Level 2.",
-		"hint": "Wholesale restocks", "sub": "Click here to continue, or restock now.", "wait": "click", "also": "restocked"},
+		"hint": "Wholesale restocks", "sub": "Tap here to continue, or restock now.", "wait": "click", "also": "restocked"},
 	{"id": "home", "title": "Head Home", "body": "Close the panel, open TRAVEL and go back Home.",
 		"hint": "Rest to end the day", "sub": "You can only sleep at home.", "wait": "arrived_home", "highlight": "travel"},
-	{"id": "sleep", "title": "End the Day", "body": "Walk to your bed and press E. The game saves automatically.",
+	{"id": "sleep", "title": "End the Day", "body": "Tap your bed, then Sleep. The game saves automatically.",
 		"hint": "Bed = End Day", "sub": "New leads arrive overnight.", "wait": "day_ended"},
 	{"id": "done", "title": "You're Ready", "body": "Find leads, sell smart, level up to unlock the city. Good luck!",
-		"hint": "Click to finish", "sub": "Replay the tutorial any time from TASKS.", "wait": "click"},
+		"hint": "Tap to finish", "hint_keys": "Click to finish", "sub": "Replay the tutorial any time from TO-DO.", "wait": "click"},
 ]
 
 var _overlay: StringName = &""

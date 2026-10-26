@@ -21,6 +21,8 @@ var spots: Array[Vector2] = []
 var style := Style.STEPS
 ## Multiplies step speed and divides stride time, so each stride covers the same distance.
 var step_rate := 1.0
+## Multiplies the rest between trips (G2a café pace: brisk mornings, relaxed evenings).
+var rest_scale := 1.0
 var min_wait := 2.5
 var max_wait := 7.0
 var min_hop := 60.0
@@ -75,7 +77,7 @@ func get_velocity(body: Node2D, delta: float, speed: float) -> Vector2:
 		if _stride_left <= 0.0:
 			_stride_left = 0.0
 			if _strides_left <= 0:
-				hold(randf_range(STEP_REST.x, STEP_REST.y))
+				hold(randf_range(STEP_REST.x, STEP_REST.y) * rest_scale)
 				return Vector2.ZERO
 			_strides_left -= 1
 			_wait = randf_range(STEP_PAUSE.x, STEP_PAUSE.y)
@@ -97,7 +99,7 @@ func report_motion(moved: float, expected: float, delta: float) -> void:
 
 
 func _rest_time() -> float:
-	return randf_range(STEP_REST.x, STEP_REST.y) if style == Style.STEPS else randf_range(min_wait, max_wait)
+	return (randf_range(STEP_REST.x, STEP_REST.y) if style == Style.STEPS else randf_range(min_wait, max_wait)) * rest_scale
 
 
 func _pick_target(from: Vector2) -> void:

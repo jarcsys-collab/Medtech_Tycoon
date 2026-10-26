@@ -114,7 +114,7 @@ func _build_deals() -> void:
 		total += int(d.amount)
 	content.add_child(UIFactory.label("%d deals closed · $%s revenue" % [GameState.deals.size(), GameState.format_money(total)], &"GoldTitle", 16))
 	if GameState.deals.is_empty():
-		content.add_child(UIFactory.label("No deals yet. Pitch café customers (E) or call leads from your phone.", &"SubLabel", 0, UIFactory.NONE, true))
+		content.add_child(UIFactory.label("No deals yet. Pitch café customers or call leads from your phone.", &"SubLabel", 0, UIFactory.NONE, true))
 	for i in range(GameState.deals.size() - 1, -1, -1):
 		var d: Dictionary = GameState.deals[i]
 		var product := GameData.get_product(d.product_id)
@@ -161,6 +161,7 @@ func _build_finance() -> void:
 		["Expenses (all time)", "$" + GameState.format_money(GameState.expenses_total)],
 		["Profit", "$" + GameState.format_money(GameState.revenue_total - GameState.expenses_total)],
 		["Reputation", "%d%%" % GameState.reputation],
+		["Leads", str(GameState.leads.size())],
 		["Level", "%d  (%s)" % [GameState.level, ("%d / %d XP" % [prog.x, prog.y]) if prog.y > 0 else "MAX"]],
 		["Deals closed", str(GameState.deals.size())],
 		["Customers", str(GameState.customers.size())],

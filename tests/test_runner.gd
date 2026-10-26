@@ -4,9 +4,10 @@ extends Node
 ##   godot --headless --path . res://tests/test_runner.tscn
 ## Exit code 0 = all passed, 1 = a failure. Each test_* method gets a fresh temp directory and
 ## SaveSystem pointed into it; the player's real save is checked to be byte-identical afterwards.
+## Run only some suites (quick checks between commits): ... test_runner.tscn -- --suite=responsive,time_of_day
 
 const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd",
-	"res://tests/test_environments.gd", "res://tests/test_responsive.gd"]
+	"res://tests/test_environments.gd", "res://tests/test_responsive.gd", "res://tests/test_time_of_day.gd", "res://tests/test_tap_first.gd"]
 
 var tmp_root := ""
 var _failures: Array[String] = []
@@ -48,7 +49,7 @@ func _run() -> void:
 	tmp_root = OS.get_temp_dir().path_join("medtycoon-tests-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()])
 	var passed := 0
 	var total := 0
-	for path in SUITES:
+	for path in _selected_suites():
 		var script := load(path) as GDScript
 		if script == null or not script.can_instantiate():
 			_current = path
@@ -79,7 +80,22 @@ func _run() -> void:
 	print("\n%d/%d tests passed, %d checks, %d failures" % [passed, total, _checks, _failures.size()])
 	for f in _failures:
 		print("  - ", f)
+	# A suite that ends in the café leaves its music playing; a stream still playing at quit is
+	# reported as leaked by the headless audio driver. The audio thread releases it a moment later.
+	for p in MusicManager.find_children("*", "AudioStreamPlayer", false, false):
+		(p as AudioStreamPlayer).stop()
+		(p as AudioStreamPlayer).stream = null
+	await get_tree().create_timer(0.3).timeout
 	get_tree().quit(0 if _failures.is_empty() and total > 0 else 1)
+
+
+## All suites, or those whose file name contains one of the --suite=a,b names.
+func _selected_suites() -> Array:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--suite="):
+			var names := Array(arg.trim_prefix("--suite=").split(",", false))
+			return SUITES.filter(func(path: String): return names.any(func(n: String): return path.get_file().contains(n)))
+	return SUITES
 
 
 ## Fresh temp directory and default SaveSystem settings, pointed away from user://.
