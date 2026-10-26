@@ -233,6 +233,10 @@ func _pick_interactable(point: Vector2) -> Interactable:
 		var feet := it.global_position
 		var d := point.distance_to(Geometry2D.get_closest_point_to_segment(point, feet, it.get_marker_position()))
 		d = minf(d, _distance_to_reach(it, point))
+		# A tap on the visible object (e.g. the bed's pillow) always picks it over near-misses; where
+		# artwork overlaps, the object whose tap line / reach is closest to the tap wins.
+		if it.is_on_artwork(point):
+			d -= TAP_PICK_RADIUS
 		if d < best_d:
 			best_d = d
 			best = it
