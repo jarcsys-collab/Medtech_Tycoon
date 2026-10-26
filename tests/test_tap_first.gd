@@ -110,6 +110,80 @@ func test_selection_keeps_player_beside_target() -> void:
 	await _shutdown(main)
 
 
+## Found in the live landscape smoke test: a tap on the bed's head (pillow) landed outside its reach
+## area and tap line, so it counted as a floor tap and nothing was selected. A tap anywhere on a large
+## object's artwork now picks it. Each object is tapped at several visible points from every spot the
+## player can walk to, and must end selected with the action button up.
+const BED_TAPS: Array[Vector2] = [Vector2(130, 900), Vector2(250, 950), Vector2(450, 1010)]  # pillow, middle, foot
+
+
+func test_tapping_large_objects_selects_them_from_anywhere() -> void:
+	for spec in [["home", "Bed"], ["warehouse", "Actors/ShelfBP/Interactable"], ["warehouse", "Actors/ShelfECG/Interactable"]]:
+		var main := await _boot_from_fixture({"location_id": spec[0]})
+		var loc: LocationBase = main.current_location
+		var player: Player = main.player
+		var target: Interactable = loc.get_node(spec[1])
+		player.wander_when_idle = false
+		var taps: Array[Vector2] = [target.global_position]
+		if spec[1] == "Bed":
+			for p in BED_TAPS:
+				t.check(target.is_on_artwork(p), "test point %s is on the bed artwork" % p)
+				taps.append(p)
+		var map := player.nav_agent.get_navigation_map()
+		var spawn := player.global_position
+		var starts: Array[Vector2] = []
+		for fx in [0.15, 0.5, 0.85]:
+			for fy in [0.3, 0.55, 0.8]:
+				# Only spots the player can walk to: a grid point cut off from the spawn (e.g. the pocket
+				# above the bed head) becomes the nearest reachable spot toward it (the corridor's end).
+				var path := NavigationServer2D.map_get_path(map, spawn, loc.world_size * Vector2(fx, fy), true)
+				var p: Vector2 = path[-1] if not path.is_empty() else spawn
+				if starts.all(func(s: Vector2) -> bool: return s.distance_to(p) > 60.0):
+					starts.append(p)
+		t.check(starts.size() >= 5, "%s: at least 5 distinct starting spots (%d)" % [spec[1], starts.size()])
+		for start in starts:
+			for tap in taps:
+				player.tap_at(start)  # clears any selection
+				player._cancel_tap()
+				player.global_position = start
+				await t.get_tree().physics_frame
+				await t.get_tree().physics_frame
+				player.tap_at(tap)
+				for i in 900:
+					await t.get_tree().physics_frame
+					if player.current_focus() == target and not player._tap_active:
+						break
+				await _wait(0.3)
+				var at := "%s tapped at (%d, %d) from (%d, %d)" % [spec[1], tap.x, tap.y, start.x, start.y]
+				t.check(player.current_focus() == target, at + ": selected")
+				t.check(main.hud._interact_button.visible and main.hud._interact_button.text == target.get_prompt(), at + ": action button shown")
+		await _shutdown(main)
+
+
+## Artwork picking only counts for usable, visible objects; floor taps still walk.
+func test_artwork_picking_is_safe() -> void:
+	var main := await _boot_from_fixture({"location_id": "home"})
+	var player: Player = main.player
+	var bed: Interactable = main.current_location.get_node("Bed")
+	var pillow := BED_TAPS[0]
+	player.wander_when_idle = false
+	t.check(player._pick_interactable(pillow) == bed, "pillow tap picks the bed")
+	bed.enabled = false
+	t.check(player._pick_interactable(pillow) == null, "a disabled object's artwork does not pick it")
+	bed.enabled = true
+	var art := bed.get_node(bed.highlight_path) as CanvasItem
+	art.hide()
+	t.check(not bed.is_on_artwork(pillow) and player._pick_interactable(pillow) == null, "hidden artwork does not catch taps")
+	art.show()
+	var floor_point := Vector2(600, 1200)
+	t.check(not bed.is_on_artwork(floor_point) and player._pick_interactable(floor_point) == null, "an empty-floor tap picks nothing")
+	var from := player.global_position
+	player.tap_at(floor_point)
+	await _wait(1.5)
+	t.check(player.global_position.distance_to(from) > 40.0 and player.current_focus() != bed, "an empty-floor tap still walks the player")
+	await _shutdown(main)
+
+
 ## Found in the browser smoke test: in portrait the action button covered the MORE sheet's tiles.
 func test_more_sheet_is_not_covered_by_the_action_button() -> void:
 	var main := await _boot_from_fixture({"location_id": "home"})

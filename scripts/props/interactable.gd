@@ -42,6 +42,14 @@ func get_marker_position() -> Vector2:
 	return global_position + marker_offset
 
 
+## True when a world point lands on this object's artwork: the opaque pixels of its highlight
+## sprite (e.g. the bed cut-out). Lets a tap anywhere on a large object pick it, not only near
+## its reach area. Objects without a Sprite2D highlight return false.
+func is_on_artwork(point: Vector2) -> bool:
+	var art := get_node_or_null(highlight_path) as Sprite2D
+	return art != null and art.is_visible_in_tree() and art.is_pixel_opaque(art.to_local(point))
+
+
 func set_highlighted(on: bool) -> void:
 	var target := get_node_or_null(highlight_path) as CanvasItem
 	if target == null:
