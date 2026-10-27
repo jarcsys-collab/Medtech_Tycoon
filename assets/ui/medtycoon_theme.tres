@@ -208,12 +208,12 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="nav_normal"]
-bg_color = Color(0.059, 0.102, 0.098, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.133, 0.2, 0.184, 1)
+bg_color = Color(0.047, 0.075, 0.071, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.122, 0.173, 0.161, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
@@ -221,10 +221,10 @@ corner_radius_bottom_left = 10
 
 [sub_resource type="StyleBoxFlat" id="nav_hover"]
 bg_color = Color(0.086, 0.157, 0.165, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
 border_color = Color(0.239, 0.353, 0.369, 1)
 corner_radius_top_left = 10
 corner_radius_top_right = 10

@@ -144,15 +144,16 @@ func test_phone_banner_and_messages_icon() -> void:
 		GameState.minutes = m
 		phone.refresh()
 		t.check(phone.banner.texture.resource_path.ends_with(expected[m] + ".png"), "%s banner at %s" % [expected[m], GameState.time_label()])
-	var row: PhoneRow = phone.home.get_node("Messages")
-	t.check(row.row_icon.resource_path.ends_with("pMsg-centered.png"), "centered Messages icon")
-	t.check_eq(row.subtitle, "2 unread", "unread text unchanged")
-	var badge: Label = row.get_node("Row/Icon/Badge")
+	var tile: PhoneApp = phone.app(&"messages")
+	var icon: TextureRect = tile.find_children("*", "TextureRect", true, false)[0]
+	t.check(icon.texture.resource_path.ends_with("pMsg-centered.png"), "centered Messages icon")
+	t.check_eq(tile.badge, 2, "two unread messages")
+	var badge: Label = tile._badge
 	t.check(badge.visible and badge.text == "2", "red unread badge shows 2 (was painted into the old icon)")
 	phone.open_page(&"messages")
 	await t.get_tree().process_frame
 	t.check(phone.page.visible, "messages page still opens")
-	t.check_eq(row.subtitle, "0 unread", "reading messages still clears the count")
+	t.check_eq(tile.badge, 0, "reading messages still clears the count")
 	t.check(not badge.visible, "badge clears after reading")
 	phone.show_home()
 	await _shutdown(main)

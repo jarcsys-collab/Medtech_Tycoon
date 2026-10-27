@@ -1,6 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/choice_dialog.gd" id="1"]
+[ext_resource type="StyleBox" path="res://assets/ui/tutorial_frame_style.tres" id="2"]
+[ext_resource type="StyleBox" path="res://assets/ui/tutorial_slot_style.tres" id="3"]
+[ext_resource type="Texture2D" path="res://assets/ui/portrait.png" id="4"]
 
 [node name="ChoiceDialog" type="Control"]
 layout_mode = 3
@@ -20,24 +23,53 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.01, 0.02, 0.02, 0.55)
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Stack" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
 anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = -24.0
+offset_right = 380.0
+offset_bottom = -24.0
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 0
 mouse_filter = 2
+theme_override_constants/separation = 8
 
-[node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(460, 0)
+[node name="Buttons" type="VBoxContainer" parent="Stack"]
+unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="VBox" type="VBoxContainer" parent="Center/Panel"]
+[node name="Panel" type="PanelContainer" parent="Stack"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_styles/panel = ExtResource("2")
 
-[node name="Title" type="Label" parent="Center/Panel/VBox"]
+[node name="Row" type="HBoxContainer" parent="Stack/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="PortraitFrame" type="PanelContainer" parent="Stack/Panel/Row"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_styles/panel = ExtResource("3")
+
+[node name="Portrait" type="TextureRect" parent="Stack/Panel/Row/PortraitFrame"]
+custom_minimum_size = Vector2(66, 72)
+layout_mode = 2
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Text" type="VBoxContainer" parent="Stack/Panel/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Stack/Panel/Row/Text"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
@@ -45,21 +77,9 @@ theme_type_variation = &"GoldTitle"
 text = "Title"
 autowrap_mode = 3
 
-[node name="Rule" type="HSeparator" parent="Center/Panel/VBox"]
-layout_mode = 2
-
-[node name="Body" type="RichTextLabel" parent="Center/Panel/VBox"]
+[node name="Body" type="RichTextLabel" parent="Stack/Panel/Row/Text"]
 unique_name_in_owner = true
 layout_mode = 2
 bbcode_enabled = true
 text = "Body"
 fit_content = true
-
-[node name="Gap" type="Control" parent="Center/Panel/VBox"]
-custom_minimum_size = Vector2(0, 2)
-layout_mode = 2
-
-[node name="Buttons" type="VBoxContainer" parent="Center/Panel/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 8

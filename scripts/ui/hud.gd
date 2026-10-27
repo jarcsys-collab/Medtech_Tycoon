@@ -2,8 +2,9 @@ class_name Hud
 extends Control
 ## Always-on HUD (anchored, scales with the 1280x720 canvas_items base):
 ## top bar, objective card, right nav rail, toast, contextual action button, tutorial card.
-## Sales Simulator handoff (B1): the top bar shows the date and time of day only (cash, reputation
-## and leads stay in GameState and appear in FINANCE and the phone); TO-DO and PHONE lead the nav.
+## Sales Simulator handoff (B1, V1): the top bar shows the date and time of day only, flush to the top
+## with three intentionally blank cells (cash, reputation and leads stay in GameState and appear in
+## FINANCE and the phone; level and XP moved to the phone's Profile app); TO-DO and PHONE lead the nav.
 
 signal nav_selected(id: StringName)
 ## Portrait layout only: the task / tutorial cards changed size or visibility.
@@ -13,6 +14,9 @@ const TOAST_SECONDS := 2.6  # Medtycoonv1 toast timeout
 ## Time-of-day indicator (G2a): the clock's caption names the slot, in the slot's colour.
 const SLOT_LABELS := {&"morning": "MORNING", &"afternoon": "AFTERNOON", &"evening": "EVENING"}
 const SLOT_COLORS := {&"morning": Color("#f2b866"), &"afternoon": Color("#ffd27a"), &"evening": Color("#b9a3ff")}
+## ZIP top bar: "DAY N" in the primary text colour, the time in gold.
+const DAY_COLOR := Color("#f2efe6")
+const TIME_COLOR := Color("#e8c25a")
 const SLOT_NOTICES := {
 	&"morning": "Morning: commuters drop by the café",
 	&"afternoon": "Afternoon rush: the café is busiest now",
@@ -26,9 +30,6 @@ const TASK_ICON := preload("res://assets/ui/tasks.png")
 @onready var cash_block: StatBlock = %CashBlock
 @onready var rep_block: StatBlock = %RepBlock
 @onready var leads_block: StatBlock = %LeadsBlock
-@onready var level_label: Label = %LevelLabel
-@onready var xp_bar: ProgressBar = %XPBar
-@onready var xp_label: Label = %XPLabel
 @onready var nav_list: BoxContainer = %NavList
 @onready var objective: PanelContainer = %Objective
 @onready var objective_count: Label = %ObjectiveCount
@@ -50,7 +51,7 @@ const TASK_ICON := preload("res://assets/ui/tasks.png")
 
 @onready var top_bar: PanelContainer = $TopBar
 @onready var stat_row: HBoxContainer = $TopBar/Row
-@onready var level_box: VBoxContainer = $TopBar/Row/Level
+@onready var date_cell: HBoxContainer = $TopBar/Row/Cell1
 @onready var nav_rail: PanelContainer = $NavRail
 @onready var objective_head: Control = $Objective/VBox/Head
 @onready var tutorial_portrait: Control = $Tutorial/Row/PortraitFrame/Portrait
@@ -71,9 +72,10 @@ const PIXEL_PORTRAIT_SLOT := preload("res://assets/ui/tutorial_slot_style.tres")
 			_apply_tutorial_frame()
 ## Portrait (phone) layout metrics, in the portrait UI's logical pixels (~ CSS pixels).
 const MOBILE_MARGIN := 6.0
+## Blank top-bar cells and their dividers (wide layouts only; portrait shows the date cell alone).
+const BLANK_CELLS: Array[StringName] = [&"Div1", &"Cell2", &"Div2", &"Cell3", &"Div3", &"Cell4"]
 const MOBILE_NAV_HEIGHT := 60.0
-## Extra room for the notch / status bar (top) and the home indicator / browser bar (bottom).
-const SAFE_TOP := 4.0
+## Extra room for the home indicator / browser bar (bottom). The top bar sits flush at the top.
 const SAFE_BOTTOM := 8.0
 ## Nav items that move into the MORE sheet on portrait phones (TO-DO, PHONE, TRAVEL stay in the bar).
 const MOBILE_SECONDARY: Array[StringName] = [&"inventory", &"deals", &"finance"]
@@ -85,14 +87,10 @@ var compact := false
 ## Touchscreen device: no keyboard hints. The contextual action button is shown on every platform;
 ## keyboard devices also get the floating [E] badge (InteractionMarker) and key hints as shortcuts.
 var touch_ui := false
-var _scene_row_order: Array[Node] = []
-var _mobile_rows: VBoxContainer
-var _mobile_spacer: Control
 
 var _toast_timer: SceneTreeTimer
 var _toast_shown_ms := -100000
 var _map_mode := false
-var _xp_tween: Tween
 var _objective_id := ""
 var _active_nav: StringName = &""
 var _tutorial_shown := false
@@ -121,6 +119,8 @@ func _ready() -> void:
 	_nav_order.assign(nav_list.get_children())
 	_build_mobile_controls()
 	_apply_tutorial_frame()
+	day_block.get_node("Text/Caption").add_theme_color_override(&"font_color", DAY_COLOR)
+	clock_block.get_node("Text/Value").add_theme_color_override(&"font_color", TIME_COLOR)
 	tutorial.gui_input.connect(_on_tutorial_input)
 	skip_button.pressed.connect(Tutorial.skip)
 	Tutorial.step_changed.connect(func(_step: Dictionary): _refresh_tutorial())
@@ -146,21 +146,6 @@ func refresh() -> void:
 	cash_block.value = "$" + GameState.format_money(GameState.cash)
 	rep_block.value = "%d%%" % GameState.reputation
 	leads_block.value = str(GameState.leads.size())
-	level_label.text = "LV %d" % GameState.level
-	var prog := GameState.xp_progress()
-	var target := 1.0
-	if prog.y > 0:
-		target = float(prog.x) / prog.y
-		xp_label.text = "%d / %d XP" % [prog.x, prog.y]
-	else:
-		xp_label.text = "MAX LEVEL"
-	xp_bar.max_value = 1.0
-	if _xp_tween:
-		_xp_tween.kill()
-	if target < xp_bar.value:  # level-up wrap: fill, then restart
-		xp_bar.value = 0.0
-	_xp_tween = create_tween()
-	_xp_tween.tween_property(xp_bar, "value", target, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	var tasks_btn := nav_list.get_node_or_null("Tasks") as NavButton
 	if tasks_btn:
 		tasks_btn.show_dot = GameState.has_open_tasks()
@@ -334,7 +319,7 @@ func _on_tutorial_input(event: InputEvent) -> void:
 
 # --- Responsive layout --------------------------------------------------------------
 # Desktop uses the scene layout unchanged. Mobile landscape keeps it but collapses the task card
-# and uses the touch action button. Portrait phones get a compact two-row top bar, a one-line
+# and uses the touch action button. Portrait phones get a compact one-row top bar, a one-line
 # objective bar, a 5-tab bottom bar (TASKS PHONE TRAVEL INVENTORY MORE; MORE holds DEALS and
 # FINANCE, the SAME nav buttons) and a bottom-sheet tutorial. LayoutSwap restores the scene values.
 
@@ -345,7 +330,7 @@ func apply_layout(portrait_mode: bool) -> void:
 	touch_ui = DisplayServer.is_touchscreen_available()
 	# Portrait -> portrait (e.g. phone -> tablet width) re-applies on top; anything else starts
 	# from the scene layout. (Round-tripping through desktop leaves stale minimum sizes.)
-	if not (portrait and _mobile_rows != null and _mobile_rows.visible):
+	if not (portrait and not stat_row.get_node(^"Cell2").visible):
 		apply_desktop_layout()
 	if portrait:
 		apply_mobile_portrait_layout()
@@ -361,7 +346,6 @@ func apply_layout(portrait_mode: bool) -> void:
 
 
 func apply_desktop_layout() -> void:
-	_set_stat_rows(false)
 	for c in _swapped:
 		LayoutSwap.restore(c)
 	_swapped.clear()
@@ -373,14 +357,18 @@ func apply_desktop_layout() -> void:
 
 func apply_mobile_portrait_layout() -> void:
 	var m := MOBILE_MARGIN
-	_set_stat_rows(true)
 	var bar_style := top_bar.get_theme_stylebox(&"panel").duplicate() as StyleBox
 	bar_style.content_margin_left = 10.0
 	bar_style.content_margin_right = 10.0
 	bar_style.content_margin_top = 5.0
 	bar_style.content_margin_bottom = 5.0
-	_swap(top_bar, {"offset_left": m, "offset_top": m + SAFE_TOP, "offset_right": -m, "offset_bottom": m + SAFE_TOP,
+	# Flush to the top like the ZIP; the date cell alone (Day N · date on the left, the clock right).
+	_swap(top_bar, {"offset_left": m, "offset_top": 0.0, "offset_right": -m, "offset_bottom": 0.0,
 		"theme_override_styles/panel": bar_style})
+	for cell in BLANK_CELLS:
+		_swap(stat_row.get_node(NodePath(cell)), {"visible": false})
+	_swap(date_cell.get_node(^"Sep1"), {"visible": false})
+	_swap(clock_block, {"alignment": BoxContainer.ALIGNMENT_END})
 	# Compact stats: no captions, small icons, one font size.
 	for block: StatBlock in [day_block, clock_block, cash_block, rep_block, leads_block]:
 		_swap(block, {"custom_minimum_size": Vector2.ZERO, "theme_override_constants/separation": 5})
@@ -391,11 +379,7 @@ func apply_mobile_portrait_layout() -> void:
 	_swap(clock_block.get_node("Text/Caption"), {"visible": true, "theme_override_font_sizes/font_size": 10})
 	for block in [clock_block, cash_block, rep_block, leads_block]:
 		_swap(block, {"size_flags_horizontal": Control.SIZE_EXPAND_FILL})
-	_swap(level_box, {"custom_minimum_size": Vector2(118, 0), "theme_override_constants/separation": 2})
-	_swap(level_label, {"theme_override_font_sizes/font_size": 15})
-	_swap(xp_label, {"theme_override_font_sizes/font_size": 11})
-	_swap(xp_bar, {"custom_minimum_size": Vector2(0, 6)})
-	var below_bar := m + SAFE_TOP + top_bar.get_combined_minimum_size().y + 4.0
+	var below_bar := top_bar.get_combined_minimum_size().y + 4.0
 	_swap(objective, {"anchor_left": 0.0, "anchor_right": 1.0,
 		"offset_left": m, "offset_top": below_bar, "offset_right": -m, "offset_bottom": below_bar})
 	# Toast: full width with wrapping, so long or two-line notices never run off a narrow screen.
@@ -444,7 +428,7 @@ func _apply_objective_mode() -> void:
 ## Screen space the portrait HUD covers above / below the room (for the camera and overlays).
 ## Built from minimum sizes, so it is valid before the HUD's first layout pass.
 func get_portrait_insets(include_cards := true) -> Vector2:
-	var top := MOBILE_MARGIN + SAFE_TOP + top_bar.get_combined_minimum_size().y + 6.0
+	var top := top_bar.get_combined_minimum_size().y + 6.0
 	if include_cards and objective.visible:
 		top += objective.get_combined_minimum_size().y + 4.0
 	var bottom := _nav_height() + MOBILE_MARGIN + SAFE_BOTTOM + 6.0
@@ -462,48 +446,6 @@ func _swap(c: Control, values: Dictionary) -> void:
 	if not _swapped.has(c):
 		_swapped.append(c)
 	LayoutSwap.apply(c, values)
-
-
-## Portrait: split the single stat row into two rows (date + level, then time; cash, reputation
-## and leads ride along hidden).
-## The stat nodes are moved, not duplicated, so every existing reference keeps working.
-func _set_stat_rows(two_rows: bool) -> void:
-	if _scene_row_order.is_empty():
-		_scene_row_order.assign(stat_row.get_children())
-	if two_rows:
-		if _mobile_rows == null:
-			_mobile_rows = VBoxContainer.new()
-			_mobile_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_mobile_rows.add_theme_constant_override(&"separation", 3)
-			for i in 2:
-				var row := HBoxContainer.new()
-				row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				row.add_theme_constant_override(&"separation", 10)
-				_mobile_rows.add_child(row)
-			_mobile_spacer = Control.new()
-			_mobile_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_mobile_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_mobile_rows.get_child(0).add_child(_mobile_spacer)
-			top_bar.add_child(_mobile_rows)
-		var row1: HBoxContainer = _mobile_rows.get_child(0)
-		var row2: HBoxContainer = _mobile_rows.get_child(1)
-		for n in [day_block, level_box]:
-			n.reparent(row1, false)
-		for n in [clock_block, cash_block, rep_block, leads_block]:
-			n.reparent(row2, false)
-		row1.move_child(day_block, 0)
-		row1.move_child(_mobile_spacer, 1)
-		row1.move_child(level_box, 2)
-		stat_row.hide()
-		_mobile_rows.show()
-	elif _mobile_rows != null:
-		for i in _scene_row_order.size():
-			var n := _scene_row_order[i]
-			if n.get_parent() != stat_row:
-				n.reparent(stat_row, false)
-			stat_row.move_child(n, i)
-		stat_row.show()
-		_mobile_rows.hide()
 
 
 ## Portrait: keep the action button / prompt above the bottom bar and the tutorial sheet.
