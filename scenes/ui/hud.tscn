@@ -18,6 +18,27 @@
 
 [sub_resource type="StyleBoxEmpty" id="portrait_frame_classic"]
 
+[sub_resource type="StyleBoxFlat" id="top_bar"]
+content_margin_left = 16.0
+content_margin_top = 6.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.043, 0.071, 0.067, 1)
+border_width_left = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.122, 0.173, 0.161, 1)
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 1
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxLine" id="cell_divider"]
+color = Color(0.11, 0.157, 0.149, 1)
+thickness = 3
+vertical = true
+
 [node name="Hud" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -33,35 +54,67 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 12.0
-offset_top = 10.0
 offset_right = -12.0
-offset_bottom = 66.0
+offset_bottom = 60.0
 grow_horizontal = 2
+theme_override_styles/panel = SubResource("top_bar")
 
 [node name="Row" type="HBoxContainer" parent="TopBar"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 14
 
-[node name="DayBlock" parent="TopBar/Row" instance=ExtResource("2")]
+[node name="Cell1" type="HBoxContainer" parent="TopBar/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="DayBlock" parent="TopBar/Row/Cell1" instance=ExtResource("2")]
 unique_name_in_owner = true
 layout_mode = 2
 icon = ExtResource("4")
+icon_size = Vector2(32, 32)
 caption = "DAY 1"
 value = "Mon, Apr 1"
 
-[node name="Sep1" type="VSeparator" parent="TopBar/Row"]
+[node name="Sep1" type="VSeparator" parent="TopBar/Row/Cell1"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="ClockBlock" parent="TopBar/Row" instance=ExtResource("2")]
+[node name="ClockBlock" parent="TopBar/Row/Cell1" instance=ExtResource("2")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 0)
 layout_mode = 2
 caption = "TIME"
 value = "08:30 AM"
 
-[node name="Spacer" type="Control" parent="TopBar/Row"]
+[node name="Div1" type="VSeparator" parent="TopBar/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/separator = SubResource("cell_divider")
+
+[node name="Cell2" type="Control" parent="TopBar/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Div2" type="VSeparator" parent="TopBar/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/separator = SubResource("cell_divider")
+
+[node name="Cell3" type="Control" parent="TopBar/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Div3" type="VSeparator" parent="TopBar/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/separator = SubResource("cell_divider")
+
+[node name="Cell4" type="Control" parent="TopBar/Row"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
@@ -105,44 +158,6 @@ icon = ExtResource("7")
 icon_size = Vector2(28, 28)
 caption = "LEADS"
 value = "5"
-
-[node name="Sep4" type="VSeparator" parent="TopBar/Row"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Level" type="VBoxContainer" parent="TopBar/Row"]
-custom_minimum_size = Vector2(176, 0)
-layout_mode = 2
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_constants/separation = 4
-
-[node name="Line" type="HBoxContainer" parent="TopBar/Row/Level"]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="LevelLabel" type="Label" parent="TopBar/Row/Level/Line"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"GoldTitle"
-text = "LV 1"
-
-[node name="XPLabel" type="Label" parent="TopBar/Row/Level/Line"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 8
-theme_type_variation = &"SubLabel"
-text = "0 / 100 XP"
-
-[node name="XPBar" type="ProgressBar" parent="TopBar/Row/Level"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
-mouse_filter = 2
-max_value = 1.0
-step = 0.0
-show_percentage = false
 
 [node name="Objective" type="PanelContainer" parent="."]
 unique_name_in_owner = true

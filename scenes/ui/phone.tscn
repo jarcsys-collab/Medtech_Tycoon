@@ -1,25 +1,28 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/phone.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/ui/phone_row.tscn" id="2"]
-[ext_resource type="Texture2D" path="res://assets/ui/pLeads.png" id="3"]
-[ext_resource type="Texture2D" path="res://assets/ui/pSched.png" id="4"]
-[ext_resource type="Texture2D" uid="uid://dlt25rdihvsm8" path="res://assets/ui/pMsg-centered.png" id="5"]
-[ext_resource type="Texture2D" path="res://assets/ui/pCust.png" id="6"]
-[ext_resource type="Texture2D" path="res://assets/ui/pQuote.png" id="7"]
-[ext_resource type="Texture2D" path="res://assets/ui/pColl.png" id="8"]
 [ext_resource type="Texture2D" uid="uid://c7ogx4cs3gwqv" path="res://assets/ui/phone-sunrise.png" id="9"]
 
 [sub_resource type="StyleBoxFlat" id="title_pill"]
-content_margin_left = 10.0
+content_margin_left = 6.0
 content_margin_top = 3.0
-content_margin_right = 10.0
-content_margin_bottom = 4.0
-bg_color = Color(0.039, 0.063, 0.067, 0.6)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+bg_color = Color(0.039, 0.063, 0.067, 0.55)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="Gradient" id="banner_fade_gradient"]
+offsets = PackedFloat32Array(0.45, 0.82, 1)
+colors = PackedColorArray(0.059, 0.114, 0.118, 0, 0.059, 0.114, 0.118, 0.7, 0.059, 0.114, 0.118, 1)
+
+[sub_resource type="GradientTexture2D" id="banner_fade"]
+gradient = SubResource("banner_fade_gradient")
+width = 4
+height = 64
+fill_to = Vector2(0, 1)
 
 [node name="Phone" type="Control"]
 layout_mode = 3
@@ -99,7 +102,7 @@ texture = ExtResource("9")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="Center" type="CenterContainer" parent="Frame/Screen/VBox/TopBanner"]
+[node name="Fade" type="TextureRect" parent="Frame/Screen/VBox/TopBanner"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -107,30 +110,44 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+texture = SubResource("banner_fade")
+expand_mode = 1
+stretch_mode = 0
 
-[node name="TitlePill" type="PanelContainer" parent="Frame/Screen/VBox/TopBanner/Center"]
+[node name="Labels" type="VBoxContainer" parent="Frame/Screen/VBox/TopBanner"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_right = -10.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="TitlePill" type="PanelContainer" parent="Frame/Screen/VBox/TopBanner/Labels"]
 layout_mode = 2
+size_flags_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("title_pill")
 
-[node name="Labels" type="VBoxContainer" parent="Frame/Screen/VBox/TopBanner/Center/TitlePill"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 0
-
-[node name="Title" type="Label" parent="Frame/Screen/VBox/TopBanner/Center/TitlePill/Labels"]
+[node name="Title" type="Label" parent="Frame/Screen/VBox/TopBanner/Labels/TitlePill"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"HeaderLabel"
-theme_override_font_sizes/font_size = 22
-text = "SALES PHONE"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 17
+text = "Good morning"
 
-[node name="Subtitle" type="Label" parent="Frame/Screen/VBox/TopBanner/Center/TitlePill/Labels"]
+[node name="Subtitle" type="Label" parent="Frame/Screen/VBox/TopBanner/Labels"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SubLabel"
 theme_override_colors/font_color = Color(0.624, 0.831, 0.784, 1)
-text = "Your day, your deals."
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 11
+text = "All caught up"
 
 [node name="Gap" type="Control" parent="Frame/Screen/VBox"]
 custom_minimum_size = Vector2(0, 6)
@@ -141,54 +158,13 @@ layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Home" type="VBoxContainer" parent="Frame/Screen/VBox/HomeScroll"]
+[node name="Home" type="GridContainer" parent="Frame/Screen/VBox/HomeScroll"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 6
-
-[node name="Leads" parent="Frame/Screen/VBox/HomeScroll/Home" instance=ExtResource("2")]
-layout_mode = 2
-id = &"leads"
-title = "Leads"
-subtitle = "5 new leads"
-row_icon = ExtResource("3")
-
-[node name="Schedule" parent="Frame/Screen/VBox/HomeScroll/Home" instance=ExtResource("2")]
-layout_mode = 2
-id = &"schedule"
-title = "Schedule"
-subtitle = "0 meetings today"
-row_icon = ExtResource("4")
-
-[node name="Messages" parent="Frame/Screen/VBox/HomeScroll/Home" instance=ExtResource("2")]
-layout_mode = 2
-id = &"messages"
-title = "Messages"
-subtitle = "2 unread"
-row_icon = ExtResource("5")
-
-[node name="Customers" parent="Frame/Screen/VBox/HomeScroll/Home" instance=ExtResource("2")]
-layout_mode = 2
-id = &"customers"
-title = "Customers"
-subtitle = "3 customers"
-row_icon = ExtResource("6")
-
-[node name="Quotes" parent="Frame/Screen/VBox/HomeScroll/Home" instance=ExtResource("2")]
-layout_mode = 2
-id = &"quotes"
-title = "Quotes"
-subtitle = "0 pending"
-row_icon = ExtResource("7")
-
-[node name="Collections" parent="Frame/Screen/VBox/HomeScroll/Home" instance=ExtResource("2")]
-layout_mode = 2
-id = &"collections"
-title = "Collections"
-subtitle = "$0 due today"
-row_icon = ExtResource("8")
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 10
+columns = 3
 
 [node name="Page" type="VBoxContainer" parent="Frame/Screen/VBox"]
 unique_name_in_owner = true

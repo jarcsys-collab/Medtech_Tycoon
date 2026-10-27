@@ -109,7 +109,7 @@ func test_portrait_controls_reachable_and_clickable() -> void:
 		# Sales Phone: open a page, then back.
 		main.select(&"phone")
 		await _settle()
-		await _click(main.phone.home.get_node("Collections"), at + "last phone row")
+		await _click(main.phone.app(&"profile"), at + "last working phone app")
 		await _settle()
 		t.check(main.phone.page.visible, at + "phone page opens")
 		await _click(main.phone.back_button, at + "phone back")

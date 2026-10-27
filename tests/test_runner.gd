@@ -7,7 +7,7 @@ extends Node
 ## Run only some suites (quick checks between commits): ... test_runner.tscn -- --suite=responsive,time_of_day
 
 const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd",
-	"res://tests/test_environments.gd", "res://tests/test_responsive.gd", "res://tests/test_time_of_day.gd", "res://tests/test_tap_first.gd", "res://tests/test_day_end.gd"]
+	"res://tests/test_environments.gd", "res://tests/test_responsive.gd", "res://tests/test_time_of_day.gd", "res://tests/test_tap_first.gd", "res://tests/test_day_end.gd", "res://tests/test_visual_shell.gd"]
 
 var tmp_root := ""
 var _failures: Array[String] = []

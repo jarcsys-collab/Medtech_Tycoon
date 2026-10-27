@@ -47,6 +47,7 @@ func _ready() -> void:
 
 	hud.nav_selected.connect(select)
 	phone.close_requested.connect(_close_overlays)
+	phone.app_requested.connect(select)  # Deals / Inventory / Finance apps open their screens
 	travel_map.close_requested.connect(_close_overlays)
 	info_panel.close_requested.connect(_close_overlays)
 	choice_dialog.visibility_changed.connect(_update_input_lock)

@@ -41,7 +41,7 @@ func test_top_bar_shows_date_and_time_only() -> void:
 	t.check(_panel_mentions(main.info_panel, "Leads"), "FINANCE shows the lead count")
 	main.select(&"phone")
 	await _wait(0.3)
-	t.check_eq((main.phone.home.get_node("Leads") as PhoneRow).subtitle, "%d open leads" % GameState.leads.size(), "phone shows the lead count")
+	t.check_eq(main.phone.app(&"leads").badge, GameState.leads.size(), "phone shows the lead count")
 	await _shutdown(main)
 
 
