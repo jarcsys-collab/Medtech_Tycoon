@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/main/game_camera.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/fx/interaction_marker.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/fx/screen_fader.gd" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/ui/day_summary.tscn" id="10"]
 
 [sub_resource type="Gradient" id="vignette_gradient"]
 offsets = PackedFloat32Array(0, 0.6, 1)
@@ -62,6 +63,9 @@ visible = false
 visible = false
 
 [node name="ChoiceDialog" parent="UI" instance=ExtResource("6")]
+visible = false
+
+[node name="DaySummary" parent="UI" instance=ExtResource("10")]
 visible = false
 
 [node name="Fader" type="CanvasLayer" parent="."]

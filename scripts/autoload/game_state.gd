@@ -16,6 +16,9 @@ signal xp_gained(amount: int)
 signal reputation_delta(amount: int)
 # Presentation-only event hooks (audio). Emitted at existing moments; no logic depends on them.
 signal day_ended(new_day: int)
+## The day is over (8:30 PM, or the player went to bed): show the end-of-day summary. Nothing
+## advances until start_next_day() is called. Emitted once per day.
+signal day_finished(summary: Dictionary)
 signal leads_added(count: int)
 signal stock_purchased(product_id: String, qty: int)
 signal deal_closed(amount: int, in_person: bool)
@@ -26,7 +29,10 @@ signal time_slot_changed(slot: StringName, announce: bool)
 
 const START_CASH := 10000          # Medtycoonv1: cash: 10000
 const START_MINUTES := 8 * 60 + 30 # Medtycoonv1: minutes: 510 (08:30 AM)
-const LATE_MINUTES := 22 * 60
+## The working day ends at 8:30 PM (Sales Simulator handoff: DAY = { start: 510, end: 1230 }).
+const DAY_END_MINUTES := 20 * 60 + 30
+## A heads-up toast half an hour before the day ends.
+const LATE_MINUTES := 20 * 60
 ## Time-of-day boundaries (Sales Simulator v3 slots). Derived from `minutes`; not saved.
 const AFTERNOON_START := 12 * 60 + 30   # 12:30 PM
 const EVENING_START := 16 * 60 + 30     # 4:30 PM
@@ -71,6 +77,11 @@ var completed_tasks := {}    ## task id -> true
 var tutorial_step := 0      ## index into Tutorial.STEPS
 var tutorial_done := false
 var _next_id := 1
+## True from the end of the day until the next morning starts; guards against advancing twice.
+## Not saved: a save made at 8:30 PM reopens the summary when loaded (see from_dict).
+var day_closing := false
+## Why the day ended: &"time" (8:30 PM) or &"sleep" (the bed).
+var day_end_reason: StringName = &""
 
 
 func _ready() -> void:
@@ -80,6 +91,7 @@ func _ready() -> void:
 # --- Lifecycle -----------------------------------------------------------------
 
 func new_game() -> void:
+	day_closing = false
 	day = 1
 	minutes = START_MINUTES
 	cash = START_CASH
@@ -103,33 +115,85 @@ func new_game() -> void:
 	_emit_all()
 
 
+## Go to bed and wake up tomorrow in one step (no summary in between).
 func sleep() -> void:
+	end_day(&"sleep")
+	start_next_day()
+
+
+## Ends today: the bed (&"sleep") or the 8:30 PM clock (&"time"). Opens the end-of-day summary;
+## the new day starts only from start_next_day(). Calling it again the same day does nothing.
+func end_day(reason: StringName = &"sleep") -> void:
+	if day_closing or (reason == &"time" and not is_day_over()):
+		return
+	day_closing = true
+	day_end_reason = reason
+	if reason == &"sleep":
+		complete_task("sleep")
+	day_finished.emit(day_summary())
+
+
+## Next morning: day + 1 at 8:30 AM at home, overnight leads and today's café prospects, autosave.
+## Only after end_day(); returns false (and changes nothing) otherwise, so it cannot run twice.
+func start_next_day() -> bool:
+	if not day_closing:
+		return false
+	day_closing = false
 	day += 1
 	day_ended.emit(day)
 	minutes = START_MINUTES
+	location_id = &"home"
 	for i in DAILY_NEW_LEADS:
 		leads.append(_make_lead("phone"))
 	leads_added.emit(DAILY_NEW_LEADS)
 	_roll_prospects()
-	complete_task("sleep")
 	UIEvents.toast("Day %d begins. +%d new leads" % [day, DAILY_NEW_LEADS])
 	_emit_all()
 	time_slot_changed.emit(time_slot(), false)
 	SaveSystem.save_game()
+	return true
+
+
+## Today's results for the end-of-day summary. Built from saved state only (deals are stamped
+## with their day; prospects are today's café guests), so it is the same after a reload.
+func day_summary() -> Dictionary:
+	var count := 0
+	var sales := 0
+	var units := 0
+	for d in deals:
+		if int(d.day) == day:
+			count += 1
+			sales += int(d.amount)
+			units += int(d.qty)
+	return {
+		"day": day, "date": date_label(), "reason": day_end_reason, "time": time_label(),
+		"deals": count, "sales": sales, "units": units,
+		"met": prospects.filter(func(p: Dictionary): return p.get("met", false)).size(),
+		"cash": cash, "level": level, "reputation": reputation, "leads": leads.size(),
+		"new_leads": DAILY_NEW_LEADS,
+	}
 
 
 # --- Time ----------------------------------------------------------------------
 
+## The clock stops at 8:30 PM; reaching it ends the day once the current action has finished
+## (deferred, so a deal's XP and reputation are in before the summary opens).
 func advance_time(mins: int) -> void:
 	var was_late := minutes >= LATE_MINUTES
 	var old_slot := time_slot()
-	minutes += mins
-	if not was_late and minutes >= LATE_MINUTES:
-		UIEvents.toast("It's getting late. Head home and sleep.")
+	minutes = mini(minutes + mins, maxi(minutes, DAY_END_MINUTES))
+	if not was_late and minutes >= LATE_MINUTES and not is_day_over():
+		UIEvents.toast("The day ends at 08:30 PM.")
 	var slot := time_slot()
 	stats_changed.emit()
 	if slot != old_slot:
 		time_slot_changed.emit(slot, true)
+	if is_day_over():
+		end_day.call_deferred(&"time")
+
+
+func is_day_over() -> bool:
+	return minutes >= DAY_END_MINUTES
 
 
 func time_label() -> String:
@@ -438,7 +502,11 @@ func from_dict(d: Dictionary) -> void:
 	if int(d.get("tutorial_version", 1)) < TUTORIAL_VERSION and not tutorial_done:
 		tutorial_step = 0
 	_next_id = int(d.get("next_id", 1))
+	day_closing = false
 	_emit_all()
+	# Saved at (or, from older versions, after) 8:30 PM: the day is over, show its summary again.
+	if is_day_over():
+		end_day.call_deferred(&"time")
 
 
 ## JSON turns ints into floats; normalise lead dictionaries after loading.

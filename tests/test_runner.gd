@@ -7,7 +7,7 @@ extends Node
 ## Run only some suites (quick checks between commits): ... test_runner.tscn -- --suite=responsive,time_of_day
 
 const SUITES := ["res://tests/test_save_system.gd", "res://tests/test_main_smoke.gd", "res://tests/test_characters.gd",
-	"res://tests/test_environments.gd", "res://tests/test_responsive.gd", "res://tests/test_time_of_day.gd", "res://tests/test_tap_first.gd"]
+	"res://tests/test_environments.gd", "res://tests/test_responsive.gd", "res://tests/test_time_of_day.gd", "res://tests/test_tap_first.gd", "res://tests/test_day_end.gd"]
 
 var tmp_root := ""
 var _failures: Array[String] = []
@@ -80,9 +80,11 @@ func _run() -> void:
 	print("\n%d/%d tests passed, %d checks, %d failures" % [passed, total, _checks, _failures.size()])
 	for f in _failures:
 		print("  - ", f)
-	# A suite that ends in the café leaves its music playing; a stream still playing at quit is
-	# reported as leaked by the headless audio driver. The audio thread releases it a moment later.
-	for p in MusicManager.find_children("*", "AudioStreamPlayer", false, false):
+	# A suite that ends in the café leaves its music playing (and one ending with a new day, its
+	# jingle); a stream still playing at quit is reported as leaked by the headless audio driver.
+	# The audio thread releases it a moment later.
+	for p in MusicManager.find_children("*", "AudioStreamPlayer", false, false) \
+			+ SfxManager.find_children("*", "AudioStreamPlayer", false, false):
 		(p as AudioStreamPlayer).stop()
 		(p as AudioStreamPlayer).stream = null
 	await get_tree().create_timer(0.3).timeout
