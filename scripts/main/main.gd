@@ -23,6 +23,7 @@ const FLOAT_MIN_SCREEN_Y := 150.0
 @onready var hud: Hud = $UI/Hud
 @onready var info_panel: InfoPanel = $UI/InfoPanel
 @onready var choice_dialog: ChoiceDialog = $UI/ChoiceDialog
+@onready var day_summary: DaySummary = $UI/DaySummary
 @onready var fader: ScreenFader = $Fader
 
 var player: Player
@@ -49,6 +50,7 @@ func _ready() -> void:
 	travel_map.close_requested.connect(_close_overlays)
 	info_panel.close_requested.connect(_close_overlays)
 	choice_dialog.visibility_changed.connect(_update_input_lock)
+	day_summary.visibility_changed.connect(_update_input_lock)
 	# Medtycoonv2 tutorial events.
 	player.moved_enough.connect(Tutorial.notify.bind("moved"))
 	overlay_changed.connect(Tutorial.on_overlay_changed)
@@ -65,6 +67,7 @@ func _ready() -> void:
 	GameState.location_changed.connect(_on_location_changed)
 	GameState.state_reset.connect(_on_state_reset)
 	GameState.cash_delta.connect(_on_cash_delta)
+	GameState.day_finished.connect(_on_day_finished)
 	GameState.xp_gained.connect(func(n: int): _float("+%d XP" % n, Color("#e8c25a")))
 	GameState.reputation_delta.connect(func(n: int): _float("%+d REP" % n, Color("#7ed8f7")))
 	# Responsive layout: re-applied on mode changes, resizes, rotation and fullscreen.
@@ -86,15 +89,17 @@ static func min_window_size(web: bool) -> Vector2i:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
-		if choice_dialog.visible:
+		if day_summary.visible:
+			pass  # only NEXT DAY leaves the summary
+		elif choice_dialog.visible:
 			choice_dialog.close()
 		else:
 			_close_overlays()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"toggle_phone") and not choice_dialog.visible:
+	elif event.is_action_pressed(&"toggle_phone") and not _modal_open():
 		select(&"phone")  # Medtycoonv2 input map: P
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed(&"open_map") and not choice_dialog.visible:
+	elif event.is_action_pressed(&"open_map") and not _modal_open():
 		select(&"travel")  # Medtycoonv2 input map: M (toggles like the TRAVEL tile)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(&"quick_save"):
@@ -177,6 +182,7 @@ func apply_desktop_layout() -> void:
 	travel_map.apply_layout(false, Vector2.ZERO)
 	info_panel.apply_layout(false, Vector2.ZERO)
 	choice_dialog.apply_layout(false)
+	day_summary.apply_layout(false)
 	camera.inset_source = Callable()
 	_update_camera_shift()
 
@@ -196,6 +202,7 @@ func apply_mobile_portrait_layout() -> void:
 	_portrait = true
 	hud.apply_layout(true)
 	choice_dialog.apply_layout(true)
+	day_summary.apply_layout(true)
 	camera.inset_source = hud.get_portrait_insets
 	_update_camera_shift()
 	_apply_overlay_insets.call_deferred()  # after the HUD has been laid out
@@ -214,7 +221,17 @@ func _apply_overlay_insets() -> void:
 
 
 func _update_input_lock() -> void:
-	player.input_enabled = not (choice_dialog.visible or active == &"travel" or _transitioning)
+	player.input_enabled = not (_modal_open() or active == &"travel" or _transitioning)
+
+
+func _modal_open() -> bool:
+	return choice_dialog.visible or day_summary.visible
+
+
+## 8:30 PM or the bed: the summary covers the screen; close what was open underneath.
+func _on_day_finished(_summary: Dictionary) -> void:
+	choice_dialog.close()
+	_close_overlays()
 
 
 func _on_location_changed(location_id: StringName) -> void:
@@ -224,8 +241,9 @@ func _on_location_changed(location_id: StringName) -> void:
 	SaveSystem.save_game()
 
 
-## New game / load / sleep: rebuild the current place so NPCs reflect the restored state.
+## New game / load / next morning: rebuild the current place so NPCs reflect the restored state.
 func _on_state_reset() -> void:
+	choice_dialog.close()  # e.g. a customer's follow-up question from the day that just ended
 	_transition_to(GameState.location_id)
 
 
